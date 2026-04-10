@@ -11,8 +11,8 @@ export default function ProcessingStatus() {
   const isProcessing = batches.some((b) => b.status === "processing");
   const hasFailed = batches.some((b) => b.status === "failed");
 
-  const color = hasFailed ? "bg-red-500" : isProcessing ? "bg-yellow-400" : "bg-green-500";
-  const title = hasFailed ? "Import failed" : isProcessing ? "Processing…" : "Idle";
+  const color = isProcessing ? "bg-yellow-400" : hasFailed ? "bg-red-500" : "bg-green-500";
+  const title = isProcessing ? "Processing…" : hasFailed ? "Import failed" : "Idle";
 
   return (
     <span className="flex items-center gap-2 text-sm text-gray-500" title={title}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listAccounts } from "../../api/accounts";
 import { uploadImport } from "../../api/imports";
@@ -8,12 +8,14 @@ export default function UploadForm() {
   const { data: accounts = [] } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
   const [accountId, setAccountId] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mutation = useMutation({
     mutationFn: () => uploadImport(accountId, file!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["batches"] });
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     },
   });
 
@@ -32,6 +34,7 @@ export default function UploadForm() {
           ))}
         </select>
         <input
+          ref={fileInputRef}
           type="file"
           accept=".csv"
           className="text-sm"

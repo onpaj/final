@@ -6,6 +6,15 @@ import ImportsPage from "./pages/Imports";
 
 const queryClient = new QueryClient();
 
+function PlaceholderPage({ title }: { title: string }) {
+  return (
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{title}</h1>
+      <p className="text-gray-500">Coming soon.</p>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -16,6 +25,8 @@ export default function App() {
             <Routes>
               <Route path="/" element={<AnalyticsPage />} />
               <Route path="/imports" element={<ImportsPage />} />
+              <Route path="/rules" element={<PlaceholderPage title="Rules" />} />
+              <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
             </Routes>
           </main>
         </div>

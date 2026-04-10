@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { listBatches } from "../../api/imports";
+import { listAccounts, type Account } from "../../api/accounts";
 
 const STATUS_BADGE: Record<string, string> = {
   processing: "bg-yellow-100 text-yellow-800",
@@ -13,6 +14,8 @@ export default function BatchHistory() {
     queryFn: listBatches,
     refetchInterval: 3000,
   });
+  const { data: accounts = [] } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
+  const accountName = (id: string) => accounts.find((a: Account) => a.id === id)?.name ?? id;
 
   if (isLoading) return <p className="text-gray-400 text-sm">Loading…</p>;
 
@@ -34,7 +37,7 @@ export default function BatchHistory() {
             {batches.map((b) => (
               <tr key={b.id} className="border-t border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono text-xs">{b.filename}</td>
-                <td className="px-4 py-3 text-gray-500">{b.account_id}</td>
+                <td className="px-4 py-3 text-gray-500">{accountName(b.account_id)}</td>
                 <td className="px-4 py-3">{b.row_count}</td>
                 <td className="px-4 py-3 text-green-700">{b.imported_count}</td>
                 <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
