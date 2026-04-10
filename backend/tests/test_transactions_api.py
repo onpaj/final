@@ -77,6 +77,8 @@ async def test_list_transactions_with_account_filter(client, mock_db):
         resp = await c.get(f"/api/transactions?account_id={account_id}")
     assert resp.status_code == 200
     assert mock_db.execute.called
+    call_arg = mock_db.execute.call_args[0][0]
+    assert "account_id" in str(call_arg).lower()
 
 
 async def test_list_transactions_with_date_range(client, mock_db):
@@ -86,6 +88,9 @@ async def test_list_transactions_with_date_range(client, mock_db):
     async with client as c:
         resp = await c.get("/api/transactions?date_from=2026-01-01&date_to=2026-01-31")
     assert resp.status_code == 200
+    call_arg = mock_db.execute.call_args[0][0]
+    query_str = str(call_arg).lower()
+    assert "booking_date" in query_str
 
 
 async def test_list_transactions_needs_review_filter(client, mock_db):
@@ -96,6 +101,10 @@ async def test_list_transactions_needs_review_filter(client, mock_db):
         resp = await c.get("/api/transactions?needs_review=true")
     assert resp.status_code == 200
     assert mock_db.execute.called
+    call_arg = mock_db.execute.call_args[0][0]
+    query_str = str(call_arg).lower()
+    assert "category_id" in query_str
+    assert "is_transfer" in query_str
 
 
 async def test_list_transactions_is_transfer_filter(client, mock_db):
@@ -105,6 +114,8 @@ async def test_list_transactions_is_transfer_filter(client, mock_db):
     async with client as c:
         resp = await c.get("/api/transactions?is_transfer=false")
     assert resp.status_code == 200
+    call_arg = mock_db.execute.call_args[0][0]
+    assert "is_transfer" in str(call_arg).lower()
 
 
 async def test_list_transactions_limit_capped_at_500(client, mock_db):

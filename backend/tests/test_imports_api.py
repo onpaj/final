@@ -120,6 +120,8 @@ async def test_list_imports_with_account_filter(client, mock_db):
         resp = await c.get(f"/api/imports?account_id={uuid.uuid4()}")
     assert resp.status_code == 200
     assert mock_db.execute.called
+    call_arg = mock_db.execute.call_args[0][0]
+    assert "account_id" in str(call_arg).lower()
 
 
 async def test_get_import_batch_not_found(client, mock_db):

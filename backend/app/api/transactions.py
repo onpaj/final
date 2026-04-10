@@ -41,7 +41,7 @@ async def list_transactions(
     category_id: uuid.UUID | None = Query(None),
     needs_review: bool | None = Query(None),
     is_transfer: bool | None = Query(None),
-    limit: int = Query(100, le=500),
+    limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> list[TransactionOut]:
