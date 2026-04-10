@@ -80,8 +80,13 @@ class ImportService:
             await db.commit()
             return
 
-        # Categorization is OUTSIDE the try/except — its failures don't affect batch status
+        # Categorization and transfer detection are OUTSIDE the try/except
+        # Their failures don't affect batch status
         if new_ids:
             from app.services.categorization_service import CategorizationService
             cat_service = CategorizationService(db)
             await cat_service.run_batch(new_ids)
+
+            from app.services.transfer_matcher import TransferMatcher
+            transfer_matcher = TransferMatcher(db)
+            await transfer_matcher.match_batch(new_ids)
