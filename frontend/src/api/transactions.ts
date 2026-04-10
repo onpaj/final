@@ -17,6 +17,7 @@ export async function listTransactions(params: {
   account_id?: string;
   date_from?: string;
   date_to?: string;
+  category_id?: string;
   needs_review?: boolean;
   limit?: number;
   offset?: number;

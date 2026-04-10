@@ -1,12 +1,29 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listBatches } from "../api/imports";
 
-export default function ProcessingStatus() {
+interface Props {
+  onJobCompleted?: () => void;
+}
+
+export default function ProcessingStatus({ onJobCompleted }: Props) {
   const { data: batches = [] } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
     refetchInterval: 5000,
   });
+
+  const prevStatusRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    batches.forEach((b) => {
+      const prev = prevStatusRef.current[b.id];
+      if (prev === "processing" && b.status === "completed") {
+        onJobCompleted?.();
+      }
+      prevStatusRef.current[b.id] = b.status;
+    });
+  }, [batches, onJobCompleted]);
 
   const latest = batches[0];
   const isProcessing = latest?.status === "processing";

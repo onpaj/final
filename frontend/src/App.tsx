@@ -5,25 +5,28 @@ import AnalyticsPage from "./pages/Analytics";
 import ImportsPage from "./pages/Imports";
 import RulesPage from "./pages/Rules";
 import SettingsPage from "./pages/Settings";
+import { DataFreshnessProvider } from "./context/DataFreshness";
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-50">
-          <NavBar />
-          <main className="p-6">
-            <Routes>
-              <Route path="/" element={<AnalyticsPage />} />
-              <Route path="/imports" element={<ImportsPage />} />
-              <Route path="/rules" element={<RulesPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
+      <DataFreshnessProvider>
+        <BrowserRouter>
+          <div className="min-h-screen bg-gray-50">
+            <NavBar />
+            <main className="p-6">
+              <Routes>
+                <Route path="/" element={<AnalyticsPage />} />
+                <Route path="/imports" element={<ImportsPage />} />
+                <Route path="/rules" element={<RulesPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </main>
+          </div>
+        </BrowserRouter>
+      </DataFreshnessProvider>
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import ProcessingStatus from "./ProcessingStatus";
+import { useDataFreshness } from "../context/DataFreshness";
 
 const links = [
   { to: "/", label: "Analytics" },
@@ -9,6 +10,8 @@ const links = [
 ];
 
 export default function NavBar() {
+  const { markStale } = useDataFreshness();
+
   return (
     <nav className="flex items-center gap-1 px-6 py-3 border-b border-gray-200 bg-white">
       {links.map((l) => (
@@ -25,7 +28,7 @@ export default function NavBar() {
         </NavLink>
       ))}
       <div className="ml-auto">
-        <ProcessingStatus />
+        <ProcessingStatus onJobCompleted={markStale} />
       </div>
     </nav>
   );
