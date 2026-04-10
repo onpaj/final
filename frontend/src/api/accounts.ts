@@ -4,6 +4,7 @@ export interface Account {
   id: string;
   name: string;
   bank: string;
+  iban?: string | null;
   currency: string;
   is_active: boolean;
 }

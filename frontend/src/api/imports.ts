@@ -18,10 +18,17 @@ export async function listBatches(): Promise<Batch[]> {
   return data;
 }
 
-export async function uploadImport(accountId: string, file: File): Promise<{ batch_id: string }> {
+export async function uploadImport(
+  accountId: string,
+  file: File,
+  columnMapping?: Record<string, string | null>,
+): Promise<{ batch_id: string }> {
   const form = new FormData();
   form.append("account_id", accountId);
   form.append("file", file);
+  if (columnMapping) {
+    form.append("column_mapping", JSON.stringify(columnMapping));
+  }
   const { data } = await client.post<{ batch_id: string }>("/api/imports", form);
   return data;
 }
