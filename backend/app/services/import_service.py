@@ -6,9 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Account, ImportBatch, Transaction
 from app.services.parsers.base import TransactionRow
+from app.services.parsers.partners import PartnersParser
 
 
-PARSER_REGISTRY: dict = {}  # populated when parsers are implemented (PartnersParser in Task 4)
+PARSER_REGISTRY: dict = {
+    "partners": PartnersParser,
+}
 
 
 class ImportService:
