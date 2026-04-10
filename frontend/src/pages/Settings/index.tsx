@@ -1,6 +1,52 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createAccount, deleteAccount, listAccounts } from "../../api/accounts";
+import client from "../../api/client";
+
+function LlmCostSection() {
+  const { data: rows = [] } = useQuery({
+    queryKey: ["llm-cost"],
+    queryFn: async () => (await client.get("/api/settings/llm-cost")).data,
+  });
+
+  const total = rows.reduce((sum: number, r: any) => sum + r.estimated_cost_usd, 0);
+
+  return (
+    <section className="bg-white border border-gray-200 rounded-lg overflow-hidden mt-6">
+      <h2 className="text-lg font-semibold px-6 py-4 border-b">LLM Usage</h2>
+      <div className="px-6 py-4">
+        <p className="text-sm text-gray-500 mb-4">
+          Total estimated cost: <strong className="text-gray-800">${total.toFixed(4)}</strong>
+        </p>
+        {rows.length === 0 ? (
+          <p className="text-sm text-gray-400">No LLM calls recorded yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr>
+                {["Month", "Model", "Calls", "Tokens In", "Tokens Out", "Est. Cost"].map((h) => (
+                  <th key={h} className="px-4 py-2 text-left">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => (
+                <tr key={i} className="border-t border-gray-100">
+                  <td className="px-4 py-2">{r.year}-{String(r.month).padStart(2, "0")}</td>
+                  <td className="px-4 py-2 font-mono text-xs">{r.model}</td>
+                  <td className="px-4 py-2">{r.calls}</td>
+                  <td className="px-4 py-2">{r.prompt_tokens?.toLocaleString()}</td>
+                  <td className="px-4 py-2">{r.completion_tokens?.toLocaleString()}</td>
+                  <td className="px-4 py-2">${r.estimated_cost_usd}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function SettingsPage() {
   const qc = useQueryClient();
@@ -128,6 +174,8 @@ export default function SettingsPage() {
           </table>
         )}
       </section>
+
+      <LlmCostSection />
     </div>
   );
 }

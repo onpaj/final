@@ -12,6 +12,7 @@ app.add_middleware(
 )
 
 from app.api import accounts, imports, transactions, categories, rules, categorization, analytics
+from app.api import settings as settings_router
 
 app.include_router(accounts.router, prefix="/api/accounts", tags=["accounts"])
 app.include_router(imports.router, prefix="/api/imports", tags=["imports"])
@@ -20,3 +21,4 @@ app.include_router(categories.router, prefix="/api/categories", tags=["categorie
 app.include_router(rules.router, prefix="/api/rules", tags=["rules"])
 app.include_router(categorization.router, prefix="/api/categorize", tags=["categorization"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
