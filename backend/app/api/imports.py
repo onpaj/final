@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import datetime
 
@@ -32,7 +33,7 @@ class BatchOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-async def _run_import(batch_id: uuid.UUID, file_bytes: bytes) -> None:
+async def _run_import(batch_id: uuid.UUID, file_bytes: bytes, column_mapping: dict | None = None) -> None:
     async with AsyncSessionLocal() as db:
         batch = await db.get(ImportBatch, batch_id)
         if not batch:
@@ -43,7 +44,7 @@ async def _run_import(batch_id: uuid.UUID, file_bytes: bytes) -> None:
             batch.error_message = "Account not found"
             await db.commit()
             return
-        await ImportService.process_batch(db, batch, account, file_bytes)
+        await ImportService.process_batch(db, batch, account, file_bytes, column_mapping=column_mapping)
 
 
 @router.post("", response_model=ImportInitiated, status_code=202)
@@ -51,27 +52,35 @@ async def start_import(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     account_id: uuid.UUID = Form(...),
+    column_mapping: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ) -> ImportInitiated:
     account = await db.get(Account, account_id)
     if not account or not account.is_active:
         raise HTTPException(status_code=404, detail="Account not found")
 
+    parsed_mapping: dict | None = None
+    if column_mapping:
+        try:
+            parsed_mapping = json.loads(column_mapping)
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(status_code=422, detail="column_mapping must be valid JSON")
+
     file_bytes = await file.read()
     filename = file.filename or "upload.csv"
-    parser_key = account.bank
 
     batch = ImportBatch(
         account_id=account_id,
         filename=filename,
-        parser_used=parser_key,
+        parser_used=account.bank,
         status="processing",
+        column_mapping=parsed_mapping,
     )
     db.add(batch)
     await db.commit()
     await db.refresh(batch)
 
-    background_tasks.add_task(_run_import, batch.id, file_bytes)
+    background_tasks.add_task(_run_import, batch.id, file_bytes, parsed_mapping)
     return ImportInitiated(batch_id=batch.id, message="Import started")
 
 

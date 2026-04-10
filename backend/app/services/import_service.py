@@ -6,12 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Account, ImportBatch, Transaction
 from app.services.parsers.base import TransactionRow
+from app.services.parsers.generic_csv import GenericCsvParser
 from app.services.parsers.partners import PartnersParser
 
-
-PARSER_REGISTRY: dict = {
-    "partners": PartnersParser,
-}
 
 
 class ImportService:
@@ -27,21 +24,26 @@ class ImportService:
         batch: ImportBatch,
         account: Account,
         file_bytes: bytes,
+        column_mapping: dict | None = None,
     ) -> None:
         """Parse and insert transactions into an existing batch. Updates batch status in-place."""
-        parser_cls = PARSER_REGISTRY.get(batch.parser_used)
-        if parser_cls is None:
-            batch.status = "failed"
-            batch.error_message = f"No parser for file type: {batch.parser_used}"
-            await db.commit()
-            return
-
         imported = 0
         duplicates = 0
         new_ids = []
         try:
-            parser = parser_cls()
-            rows = parser.parse(file_bytes)
+            if account.bank == "partners":
+                rows = PartnersParser().parse(file_bytes)
+            else:
+                if not column_mapping:
+                    column_mapping = batch.column_mapping
+                if not column_mapping:
+                    batch.status = "failed"
+                    batch.error_message = "column_mapping required for generic CSV accounts"
+                    await db.commit()
+                    return
+                rows = GenericCsvParser.parse(file_bytes, column_mapping)
+                if not batch.column_mapping:
+                    batch.column_mapping = column_mapping
             batch.row_count = len(rows)
             for row in rows:
                 hash_key = ImportService.compute_hash_key(batch.account_id, row)
