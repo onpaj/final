@@ -1,5 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listTransactions } from "../../api/transactions";
+import { listCategories, type Category } from "../../api/categories";
+import client from "../../api/client";
 
 interface Props {
   categoryId: string;
@@ -13,10 +16,60 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
   const dateTo = `${year}-${String(month).padStart(2, "0")}-31`;
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [targetCategoryId, setTargetCategoryId] = useState<string>("");
+  const [applying, setApplying] = useState(false);
+
+  const queryClient = useQueryClient();
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions", categoryId, year, month],
     queryFn: () => listTransactions({ date_from: dateFrom, date_to: dateTo, category_id: categoryId, limit: 500 }),
   });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: listCategories,
+  });
+
+  const allSelected = transactions.length > 0 && selected.size === transactions.length;
+  const someSelected = selected.size > 0 && !allSelected;
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(transactions.map((tx) => tx.id as string)));
+    }
+  }
+
+  async function applyBulkCategorize() {
+    if (!targetCategoryId || selected.size === 0) return;
+    setApplying(true);
+    try {
+      await client.patch("/api/transactions/bulk-categorize", {
+        transaction_ids: Array.from(selected),
+        category_id: targetCategoryId,
+      });
+      setSelected(new Set());
+      setTargetCategoryId("");
+      await queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    } finally {
+      setApplying(false);
+    }
+  }
 
   return (
     <div>
@@ -24,6 +77,33 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
         ← Back to group
       </button>
       <h2 className="text-xl font-bold mb-4">{categoryName}</h2>
+
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+          <span className="font-medium text-blue-800">{selected.size} selected —</span>
+          <span className="text-blue-700">Assign to:</span>
+          <select
+            className="border border-blue-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={targetCategoryId}
+            onChange={(e) => setTargetCategoryId(e.target.value)}
+          >
+            <option value="">Pick a category…</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!targetCategoryId || applying}
+            onClick={applyBulkCategorize}
+          >
+            {applying ? "Applying…" : "Apply"}
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-gray-400 text-sm">Loading…</p>
       ) : (
@@ -31,22 +111,46 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
+                <th className="px-4 py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                    onChange={toggleAll}
+                    className="cursor-pointer"
+                  />
+                </th>
                 {["Date", "Counterparty", "Description", "Amount"].map((h) => (
                   <th key={h} className="px-4 py-2 text-left">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-2.5 text-gray-500">{tx.booking_date}</td>
-                  <td className="px-4 py-2.5 font-medium">{tx.counterparty_name || "—"}</td>
-                  <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.description || "—"}</td>
-                  <td className={`px-4 py-2.5 font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
-                    {Number(tx.amount).toLocaleString("cs-CZ")} CZK
-                  </td>
-                </tr>
-              ))}
+              {transactions.map((tx) => {
+                const txId = tx.id as string;
+                const isChecked = selected.has(txId);
+                return (
+                  <tr
+                    key={txId}
+                    className={`border-t border-gray-100 hover:bg-gray-50 ${isChecked ? "bg-blue-50" : ""}`}
+                  >
+                    <td className="px-4 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleRow(txId)}
+                        className="cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500">{tx.booking_date}</td>
+                    <td className="px-4 py-2.5 font-medium">{tx.counterparty_name || "—"}</td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.description || "—"}</td>
+                    <td className={`px-4 py-2.5 font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
+                      {Number(tx.amount).toLocaleString("cs-CZ")} CZK
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {transactions.length === 0 && (

@@ -66,3 +66,22 @@ async def list_transactions(
 
     result = await db.execute(query)
     return result.scalars().all()
+
+
+class BulkCategorizeRequest(BaseModel):
+    transaction_ids: list[uuid.UUID]
+    category_id: uuid.UUID
+
+
+@router.patch("/bulk-categorize", status_code=204)
+async def bulk_categorize(body: BulkCategorizeRequest, db: AsyncSession = Depends(get_db)):
+    await db.execute(
+        Transaction.__table__.update()
+        .where(Transaction.id.in_(body.transaction_ids))
+        .values(
+            category_id=body.category_id,
+            categorization_source="manual",
+            confidence=None,
+        )
+    )
+    await db.commit()
