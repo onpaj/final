@@ -83,6 +83,7 @@ class Transaction(Base):
 
     account: Mapped["Account"] = relationship(back_populates="transactions")
     import_batch: Mapped["ImportBatch"] = relationship(back_populates="transactions")
+    category: Mapped["Category | None"] = relationship(back_populates="transactions", foreign_keys="[Transaction.category_id]")
 
 
 class CategoryGroup(Base):
@@ -108,6 +109,8 @@ class Category(Base):
     is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     group: Mapped["CategoryGroup"] = relationship(back_populates="categories")
+    transactions: Mapped[list["Transaction"]] = relationship(back_populates="category")
+    rules: Mapped[list["Rule"]] = relationship(back_populates="category")
 
 
 class Rule(Base):
@@ -124,9 +127,14 @@ class Rule(Base):
     last_hit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    category: Mapped["Category"] = relationship(back_populates="rules")
+
 
 class LlmClassification(Base):
     __tablename__ = "llm_classifications"
+    __table_args__ = (
+        Index("ix_llm_classifications_transaction_id", "transaction_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False)
