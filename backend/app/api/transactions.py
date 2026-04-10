@@ -52,7 +52,7 @@ async def export_csv(
         q = q.where(Transaction.booking_date >= date_from)
     if date_to:
         q = q.where(Transaction.booking_date <= date_to)
-    if category_id:
+    if category_id is not None:
         q = q.where(Transaction.category_id == category_id)
     result = await db.execute(q)
     transactions = result.scalars().all()
