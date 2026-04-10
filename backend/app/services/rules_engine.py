@@ -1,8 +1,11 @@
+import logging
 import re
 from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
 from app.services.parsers.base import TransactionRow
+
+_logger = logging.getLogger(__name__)
 
 @dataclass
 class RuleMatch:
@@ -22,6 +25,7 @@ class RulesEngine:
         if match_type == "amount_range":
             amt = abs(tx.amount)
             return Decimal(str(match_value["min"])) <= amt <= Decimal(str(match_value["max"]))
+        _logger.warning("Unknown match_type %r — rule will never match", match_type)
         return False
 
     @classmethod
