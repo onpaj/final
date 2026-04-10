@@ -1,0 +1,54 @@
+import { useQuery } from "@tanstack/react-query";
+import { listBatches } from "../../api/imports";
+
+const STATUS_BADGE: Record<string, string> = {
+  processing: "bg-yellow-100 text-yellow-800",
+  completed: "bg-green-100 text-green-800",
+  failed: "bg-red-100 text-red-800",
+};
+
+export default function BatchHistory() {
+  const { data: batches = [], isLoading } = useQuery({
+    queryKey: ["batches"],
+    queryFn: listBatches,
+    refetchInterval: 3000,
+  });
+
+  if (isLoading) return <p className="text-gray-400 text-sm">Loading…</p>;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <h2 className="text-lg font-semibold px-6 py-4 border-b">Import History</h2>
+      {batches.length === 0 ? (
+        <p className="px-6 py-8 text-gray-400 text-sm">No imports yet.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+            <tr>
+              {["File", "Account", "Rows", "Imported", "Duplicates", "Status", "Date"].map((h) => (
+                <th key={h} className="px-4 py-2 text-left">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {batches.map((b) => (
+              <tr key={b.id} className="border-t border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3 font-mono text-xs">{b.filename}</td>
+                <td className="px-4 py-3 text-gray-500">{b.account_id}</td>
+                <td className="px-4 py-3">{b.row_count}</td>
+                <td className="px-4 py-3 text-green-700">{b.imported_count}</td>
+                <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status] ?? ""}`}>
+                    {b.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
