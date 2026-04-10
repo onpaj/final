@@ -43,3 +43,20 @@ async def test_delete_account(client):
     acct_id = create.json()["id"]
     resp = await client.delete(f"/api/accounts/{acct_id}")
     assert resp.status_code == 204
+
+async def test_get_deleted_account_returns_404(client):
+    create = await client.post("/api/accounts", json={"name": "ToDelete", "bank": "partners", "currency": "CZK"})
+    acct_id = create.json()["id"]
+    await client.delete(f"/api/accounts/{acct_id}")
+    resp = await client.get(f"/api/accounts/{acct_id}")
+    assert resp.status_code == 404
+
+async def test_patch_nonexistent_account_returns_404(client):
+    import uuid
+    resp = await client.patch(f"/api/accounts/{uuid.uuid4()}", json={"name": "X"})
+    assert resp.status_code == 404
+
+async def test_delete_nonexistent_account_returns_404(client):
+    import uuid
+    resp = await client.delete(f"/api/accounts/{uuid.uuid4()}")
+    assert resp.status_code == 404

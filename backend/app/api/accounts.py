@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -28,12 +29,13 @@ class AccountOut(BaseModel):
     currency: str
     iban: str | None
     is_active: bool
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
 @router.get("", response_model=list[AccountOut])
 async def list_accounts(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Account).where(Account.is_active == True))
+    result = await db.execute(select(Account).where(Account.is_active.is_(True)))
     return result.scalars().all()
 
 @router.post("", response_model=AccountOut, status_code=201)
@@ -47,7 +49,7 @@ async def create_account(body: AccountCreate, db: AsyncSession = Depends(get_db)
 @router.get("/{account_id}", response_model=AccountOut)
 async def get_account(account_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     account = await db.get(Account, account_id)
-    if not account:
+    if not account or not account.is_active:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
 
