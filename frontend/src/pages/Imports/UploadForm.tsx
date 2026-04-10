@@ -22,17 +22,21 @@ export default function UploadForm() {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4">Upload Bank Export</h2>
-      <div className="flex flex-col gap-4 max-w-md">
-        <select
-          className="border border-gray-300 rounded px-3 py-2 text-sm"
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
-        >
-          <option value="">Select account…</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
+      <form className="flex flex-col gap-4 max-w-md" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+        {accounts.length === 0 ? (
+          <p className="text-sm text-gray-400">No accounts yet — add one in Settings.</p>
+        ) : (
+          <select
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+          >
+            <option value="">Select account…</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -41,15 +45,15 @@ export default function UploadForm() {
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
         <button
+          type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
           disabled={!accountId || !file || mutation.isPending}
-          onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? "Uploading…" : "Import"}
         </button>
         {mutation.isSuccess && <p className="text-green-600 text-sm">Import started!</p>}
         {mutation.isError && <p className="text-red-500 text-sm">Upload failed. Check the console.</p>}
-      </div>
+      </form>
     </div>
   );
 }

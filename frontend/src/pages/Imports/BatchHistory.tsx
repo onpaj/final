@@ -1,23 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
-import { listBatches } from "../../api/imports";
-import { listAccounts, type Account } from "../../api/accounts";
+import { listBatches, type Batch } from "../../api/imports";
+import { listAccounts } from "../../api/accounts";
 
-const STATUS_BADGE: Record<string, string> = {
+const STATUS_BADGE: Record<Batch["status"], string> = {
   processing: "bg-yellow-100 text-yellow-800",
   completed: "bg-green-100 text-green-800",
   failed: "bg-red-100 text-red-800",
 };
 
 export default function BatchHistory() {
-  const { data: batches = [], isLoading } = useQuery({
+  const { data: batches = [], isLoading, isError } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
     refetchInterval: 3000,
   });
   const { data: accounts = [] } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
-  const accountName = (id: string) => accounts.find((a: Account) => a.id === id)?.name ?? id;
+  const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? id;
 
   if (isLoading) return <p className="text-gray-400 text-sm">Loading…</p>;
+  if (isError) return <p className="text-red-500 text-sm px-6 py-4">Failed to load import history.</p>;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -42,7 +43,7 @@ export default function BatchHistory() {
                 <td className="px-4 py-3 text-green-700">{b.imported_count}</td>
                 <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status] ?? ""}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status]}`} title={b.error_message ?? undefined}>
                     {b.status}
                   </span>
                 </td>

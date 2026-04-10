@@ -22,8 +22,6 @@ export async function uploadImport(accountId: string, file: File): Promise<{ bat
   const form = new FormData();
   form.append("account_id", accountId);
   form.append("file", file);
-  const { data } = await client.post("/api/imports", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await client.post<{ batch_id: string }>("/api/imports", form);
   return data;
 }

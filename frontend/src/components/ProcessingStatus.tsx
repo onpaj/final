@@ -8,8 +8,9 @@ export default function ProcessingStatus() {
     refetchInterval: 5000,
   });
 
-  const isProcessing = batches.some((b) => b.status === "processing");
-  const hasFailed = batches.some((b) => b.status === "failed");
+  const latest = batches[0];
+  const isProcessing = latest?.status === "processing";
+  const hasFailed = latest?.status === "failed";
 
   const color = isProcessing ? "bg-yellow-400" : hasFailed ? "bg-red-500" : "bg-green-500";
   const title = isProcessing ? "Processing…" : hasFailed ? "Import failed" : "Idle";
