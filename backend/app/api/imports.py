@@ -121,6 +121,30 @@ async def list_imports(
     return result.scalars().all()
 
 
+@router.get("/{batch_id}/transactions")
+async def batch_transactions(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    from app.db.models import Transaction
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.import_batch_id == batch_id)
+        .order_by(Transaction.booking_date.desc())
+        .limit(100)
+    )
+    txs = result.scalars().all()
+    return [
+        {
+            "id": str(tx.id),
+            "booking_date": str(tx.booking_date),
+            "amount": float(tx.amount),
+            "currency": tx.currency,
+            "counterparty_name": tx.counterparty_name,
+            "description": tx.description,
+            "category_id": str(tx.category_id) if tx.category_id else None,
+        }
+        for tx in txs
+    ]
+
+
 @router.get("/{batch_id}", response_model=BatchOut)
 async def get_import(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> BatchOut:
     batch = await db.get(ImportBatch, batch_id)

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listBatches, type Batch } from "../../api/imports";
 import { listAccounts } from "../../api/accounts";
@@ -9,8 +10,44 @@ const STATUS_BADGE: Record<Batch["status"], string> = {
   failed: "bg-red-100 text-red-800",
 };
 
+function BatchTransactions({ batchId }: { batchId: string }) {
+  const { data: txs = [], isLoading } = useQuery({
+    queryKey: ["batch-transactions", batchId],
+    queryFn: async () => (await client.get(`/api/imports/${batchId}/transactions`)).data,
+  });
+
+  if (isLoading) return <p className="text-xs text-gray-400">Loading transactions…</p>;
+  if (txs.length === 0) return <p className="text-xs text-gray-400">No transactions found.</p>;
+
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-gray-400 uppercase text-xs">
+          <th className="pr-4 py-1 text-left">Date</th>
+          <th className="pr-4 py-1 text-left">Counterparty</th>
+          <th className="pr-4 py-1 text-right">Amount</th>
+          <th className="pr-4 py-1 text-left">Currency</th>
+        </tr>
+      </thead>
+      <tbody>
+        {txs.map((tx: any) => (
+          <tr key={tx.id} className="border-t border-gray-100">
+            <td className="pr-4 py-1 text-gray-500">{tx.booking_date}</td>
+            <td className="pr-4 py-1">{tx.counterparty_name || "—"}</td>
+            <td className={`pr-4 py-1 text-right font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
+              {tx.amount.toLocaleString("cs-CZ")}
+            </td>
+            <td className="pr-4 py-1 text-gray-400">{tx.currency}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function BatchHistory() {
   const qc = useQueryClient();
+  const [expanded, setExpanded] = useState<string | null>(null);
   const { data: batches = [], isLoading, isError } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
@@ -44,28 +81,41 @@ export default function BatchHistory() {
           </thead>
           <tbody>
             {batches.map((b) => (
-              <tr key={b.id} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-xs">{b.filename}</td>
-                <td className="px-4 py-3 text-gray-500">{accountName(b.account_id)}</td>
-                <td className="px-4 py-3">{b.row_count}</td>
-                <td className="px-4 py-3 text-green-700">{b.imported_count}</td>
-                <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status]}`} title={b.error_message ?? undefined}>
-                    {b.status}
-                  </span>
-                  {b.status === "failed" && (
-                    <button
-                      className="ml-2 text-blue-500 text-xs hover:underline"
-                      onClick={() => retry.mutate(b.id)}
-                      disabled={retry.isPending && retry.variables === b.id}
-                    >
-                      Retry
-                    </button>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString()}</td>
-              </tr>
+              <>
+                <tr
+                  key={b.id}
+                  className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setExpanded(expanded === b.id ? null : b.id)}
+                >
+                  <td className="px-4 py-3 font-mono text-xs">{b.filename}</td>
+                  <td className="px-4 py-3 text-gray-500">{accountName(b.account_id)}</td>
+                  <td className="px-4 py-3">{b.row_count}</td>
+                  <td className="px-4 py-3 text-green-700">{b.imported_count}</td>
+                  <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status]}`} title={b.error_message ?? undefined}>
+                      {b.status}
+                    </span>
+                    {b.status === "failed" && (
+                      <button
+                        className="ml-2 text-blue-500 text-xs hover:underline"
+                        onClick={(e) => { e.stopPropagation(); retry.mutate(b.id); }}
+                        disabled={retry.isPending && retry.variables === b.id}
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString()}</td>
+                </tr>
+                {expanded === b.id && (
+                  <tr key={`${b.id}-detail`}>
+                    <td colSpan={7} className="px-4 py-3 bg-gray-50">
+                      <BatchTransactions batchId={b.id} />
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
