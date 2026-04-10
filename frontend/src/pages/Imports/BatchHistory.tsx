@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listBatches, type Batch } from "../../api/imports";
 import { listAccounts } from "../../api/accounts";
@@ -81,9 +81,8 @@ export default function BatchHistory() {
           </thead>
           <tbody>
             {batches.map((b) => (
-              <>
+              <React.Fragment key={b.id}>
                 <tr
-                  key={b.id}
                   className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
                   onClick={() => setExpanded(expanded === b.id ? null : b.id)}
                 >
@@ -115,7 +114,7 @@ export default function BatchHistory() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>

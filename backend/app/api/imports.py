@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Account, ImportBatch
+from app.db.models import Account, ImportBatch, Transaction
 from app.db.session import AsyncSessionLocal, get_db
 from app.services.import_service import ImportService
 
@@ -34,6 +34,17 @@ class BatchOut(BaseModel):
     error_message: str | None
     imported_at: datetime
     model_config = {"from_attributes": True}
+
+
+class BatchTransactionOut(BaseModel):
+    id: uuid.UUID
+    booking_date: date
+    amount: float
+    currency: str
+    counterparty_name: str | None
+    description: str | None
+    category_id: uuid.UUID | None
+    model_config = {"from_attributes": False}
 
 
 async def _run_import(batch_id: uuid.UUID, file_bytes: bytes, column_mapping: dict | None = None) -> None:
@@ -121,9 +132,8 @@ async def list_imports(
     return result.scalars().all()
 
 
-@router.get("/{batch_id}/transactions")
+@router.get("/{batch_id}/transactions", response_model=list[BatchTransactionOut])
 async def batch_transactions(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    from app.db.models import Transaction
     result = await db.execute(
         select(Transaction)
         .where(Transaction.import_batch_id == batch_id)
@@ -132,15 +142,15 @@ async def batch_transactions(batch_id: uuid.UUID, db: AsyncSession = Depends(get
     )
     txs = result.scalars().all()
     return [
-        {
-            "id": str(tx.id),
-            "booking_date": str(tx.booking_date),
-            "amount": float(tx.amount),
-            "currency": tx.currency,
-            "counterparty_name": tx.counterparty_name,
-            "description": tx.description,
-            "category_id": str(tx.category_id) if tx.category_id else None,
-        }
+        BatchTransactionOut(
+            id=tx.id,
+            booking_date=tx.booking_date,
+            amount=float(tx.amount),
+            currency=tx.currency,
+            counterparty_name=tx.counterparty_name,
+            description=tx.description,
+            category_id=tx.category_id,
+        )
         for tx in txs
     ]
 
