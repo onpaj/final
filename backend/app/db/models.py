@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import (
-    Boolean, Date, DateTime, ForeignKey, Integer,
+    Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer,
     Numeric, String, Text, func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -30,6 +30,9 @@ class Account(Base):
 
 class ImportBatch(Base):
     __tablename__ = "import_batches"
+    __table_args__ = (
+        CheckConstraint("status IN ('processing', 'completed', 'failed')", name="ck_import_batch_status"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
@@ -49,6 +52,11 @@ class ImportBatch(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        Index("ix_transactions_account_booking", "account_id", "booking_date"),
+        Index("ix_transactions_category_booking", "category_id", "booking_date"),
+        Index("ix_transactions_is_transfer", "is_transfer"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
@@ -61,7 +69,9 @@ class Transaction(Base):
     counterparty_account: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
-    category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)  # FK to categories added in M2
+    # TODO(M2): Add ForeignKey("categories.id") here and generate an Alembic migration
+    # to add the FK constraint once the categories table is created in M2.
+    category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     is_transfer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
