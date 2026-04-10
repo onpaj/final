@@ -102,9 +102,8 @@ class ImportService:
             await db.commit()
             raise
 
-    @classmethod
+    @staticmethod
     async def process_batch(
-        cls,
         db: AsyncSession,
         batch: ImportBatch,
         account: Account,
@@ -122,7 +121,7 @@ class ImportService:
         batch.row_count = len(rows)
 
         try:
-            hash_map = {cls.compute_hash_key(account.id, row): row for row in rows}
+            hash_map = {ImportService.compute_hash_key(account.id, row): row for row in rows}
 
             existing_result = await db.execute(
                 select(Transaction.hash_key).where(
