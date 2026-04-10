@@ -30,7 +30,7 @@ async def test_rule_match_does_not_call_llm():
 
     with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
         service = CategorizationService(mock_db)
-        await service._categorize_one(tx, [rule])
+        await service._categorize_one(tx, [rule], [])
         MockLLM.return_value.classify.assert_not_called()
 
     assert tx.category_id == groceries_id

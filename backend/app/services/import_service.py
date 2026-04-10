@@ -72,11 +72,14 @@ class ImportService:
             batch.duplicate_count = duplicates
             batch.status = "completed"
             await db.commit()
-            if new_ids:
-                from app.services.categorization_service import CategorizationService
-                cat_service = CategorizationService(db)
-                await cat_service.run_batch(new_ids)
         except Exception as exc:
             batch.status = "failed"
             batch.error_message = str(exc)
             await db.commit()
+            return
+
+        # Categorization is OUTSIDE the try/except — its failures don't affect batch status
+        if new_ids:
+            from app.services.categorization_service import CategorizationService
+            cat_service = CategorizationService(db)
+            await cat_service.run_batch(new_ids)

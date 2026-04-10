@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -5,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Category, LlmClassification, Rule, Transaction
+from app.services.parsers.base import TransactionRow
 from app.services.rules_engine import RulesEngine
 from app.services.anthropic_client import AnthropicClient, CONFIDENCE_THRESHOLD, AnthropicClassificationError
 
@@ -35,9 +37,7 @@ class CategorizationService:
         result = await self._db.execute(select(Category.name))
         return [row[0] for row in result.all()]
 
-    async def _categorize_one(self, tx: Transaction, rules: list[dict]) -> None:
-        from app.services.parsers.base import TransactionRow
-
+    async def _categorize_one(self, tx: Transaction, rules: list[dict], categories: list[str]) -> None:
         row = TransactionRow(
             booking_date=tx.booking_date,
             value_date=tx.value_date,
@@ -61,9 +61,9 @@ class CategorizationService:
             return
 
         # LLM fallback
-        categories = await self._load_category_names()
         try:
-            result = self._llm.classify(
+            result = await asyncio.to_thread(
+                self._llm.classify,
                 counterparty=tx.counterparty_name,
                 description=tx.description,
                 amount=tx.amount,
@@ -102,13 +102,14 @@ class CategorizationService:
         )
         transactions = result.scalars().all()
         rules = await self._load_rules()
+        categories = await self._load_category_names()
 
         categorized = 0
         needs_review = 0
         for tx in transactions:
             if tx.category_id is not None:
                 continue
-            await self._categorize_one(tx, rules)
+            await self._categorize_one(tx, rules, categories)
             if tx.category_id is not None:
                 categorized += 1
             else:
