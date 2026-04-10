@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listTransactions } from "../../api/transactions";
 import { listCategories, type Category } from "../../api/categories";
 import client from "../../api/client";
@@ -18,7 +18,6 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [targetCategoryId, setTargetCategoryId] = useState<string>("");
-  const [applying, setApplying] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -30,6 +29,16 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: listCategories,
+  });
+
+  const bulkMutation = useMutation({
+    mutationFn: (payload: { transaction_ids: string[]; category_id: string }) =>
+      client.patch("/api/transactions/bulk-categorize", payload),
+    onSuccess: () => {
+      setSelected(new Set());
+      setTargetCategoryId("");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
   });
 
   const allSelected = transactions.length > 0 && selected.size === transactions.length;
@@ -51,23 +60,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     if (allSelected) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(transactions.map((tx) => tx.id as string)));
-    }
-  }
-
-  async function applyBulkCategorize() {
-    if (!targetCategoryId || selected.size === 0) return;
-    setApplying(true);
-    try {
-      await client.patch("/api/transactions/bulk-categorize", {
-        transaction_ids: Array.from(selected),
-        category_id: targetCategoryId,
-      });
-      setSelected(new Set());
-      setTargetCategoryId("");
-      await queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    } finally {
-      setApplying(false);
+      setSelected(new Set(transactions.map((tx) => tx.id)));
     }
   }
 
@@ -96,11 +89,19 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
           </select>
           <button
             className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!targetCategoryId || applying}
-            onClick={applyBulkCategorize}
+            disabled={!targetCategoryId || bulkMutation.isPending}
+            onClick={() =>
+              bulkMutation.mutate({
+                transaction_ids: Array.from(selected),
+                category_id: targetCategoryId,
+              })
+            }
           >
-            {applying ? "Applying…" : "Apply"}
+            {bulkMutation.isPending ? "Applying…" : "Apply"}
           </button>
+          {bulkMutation.isError && (
+            <p className="text-red-500 text-sm">Failed to apply. Please try again.</p>
+          )}
         </div>
       )}
 
@@ -127,18 +128,17 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
             </thead>
             <tbody>
               {transactions.map((tx) => {
-                const txId = tx.id as string;
-                const isChecked = selected.has(txId);
+                const isChecked = selected.has(tx.id);
                 return (
                   <tr
-                    key={txId}
+                    key={tx.id}
                     className={`border-t border-gray-100 hover:bg-gray-50 ${isChecked ? "bg-blue-50" : ""}`}
                   >
                     <td className="px-4 py-2.5">
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => toggleRow(txId)}
+                        onChange={() => toggleRow(tx.id)}
                         className="cursor-pointer"
                       />
                     </td>

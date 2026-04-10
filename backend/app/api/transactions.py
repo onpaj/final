@@ -1,9 +1,10 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -69,7 +70,7 @@ async def list_transactions(
 
 
 class BulkCategorizeRequest(BaseModel):
-    transaction_ids: list[uuid.UUID]
+    transaction_ids: Annotated[list[uuid.UUID], Field(min_length=1)]
     category_id: uuid.UUID
 
 
