@@ -5,16 +5,31 @@ from decimal import Decimal
 
 from app.services.parsers.base import TransactionRow
 
+_EXPECTED_HEADER = [
+    "Datum provedení", "Datum zúčtování", "Směr", "Typ", "Zpráva pro příjemce",
+    "Číslo účtu protistrany", "Kód banky protistrany", "IBAN protistrany",
+    "Název protistrany", "Původní název protistrany", "Poznámka pro mě",
+    "Konstantní symbol", "Specifický symbol", "Variabilní symbol", "Reference",
+    "Částka", "Měna", "Původní částka", "Původní měna", "Směnný kurz",
+    "Držitel karty", "Číslo karty", "Identifikace transakce",
+]
+
 
 class PartnersParser:
+    _EXPECTED_HEADER = _EXPECTED_HEADER
+
     def parse(self, file_bytes: bytes) -> list[TransactionRow]:
-        text = file_bytes.decode("utf-8")
+        text = file_bytes.decode("utf-8-sig")
         reader = csv.reader(io.StringIO(text), delimiter=";", quotechar='"')
-        next(reader)  # skip header
+        header = [h.strip() for h in next(reader)]
+        if header != self._EXPECTED_HEADER:
+            raise ValueError(f"Unexpected CSV header. Got: {header}")
         rows = []
         for raw in reader:
             if not any(f.strip() for f in raw):
                 continue
+            if len(raw) < 23:
+                raise ValueError(f"Row has {len(raw)} columns, expected 23: {raw}")
             rows.append(TransactionRow(
                 booking_date=self._parse_date(raw[0]),
                 value_date=self._parse_date(raw[1]),
@@ -34,7 +49,10 @@ class PartnersParser:
 
     @staticmethod
     def _parse_amount(s: str) -> Decimal:
-        return Decimal(s.strip().replace(",", "."))
+        cleaned = s.strip().replace("\xa0", "").replace(" ", "")
+        if not cleaned:
+            raise ValueError("Amount field is empty")
+        return Decimal(cleaned.replace(",", "."))
 
     @staticmethod
     def _parse_counterparty_account(iban: str, account: str, bank: str) -> str | None:

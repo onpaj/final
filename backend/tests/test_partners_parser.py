@@ -1,3 +1,4 @@
+import pytest
 from datetime import date
 from decimal import Decimal
 
@@ -72,6 +73,48 @@ def test_card_payment_no_iban():
     assert row.counterparty_name == "HORNBACH"
     assert row.counterparty_account is None  # no IBAN, no account+bank
     assert row.description == "Platba kartou"  # col 3 fallback
+    assert row.booking_date != row.value_date  # card payment has different booking vs value date
+
+
+def test_single_digit_day_and_month():
+    csv_data = make_csv(
+        '"9.3.2026";"11.3.2026";"Odchozí";"Platba kartou";"";"";"";"";"Rohlik.cz";"";"";"";"";"";"";"-2628,39";"CZK";"-2628,39";"CZK";"1";"";"";"183cdfd6-fe9d-4176-aa14-209656b4d4dc"'
+    )
+    result = PartnersParser().parse(csv_data)
+    assert result[0].booking_date == date(2026, 3, 9)
+    assert result[0].value_date == date(2026, 3, 11)
+
+
+def test_counterparty_account_from_account_bank():
+    # No IBAN, but account number and bank code present
+    csv_data = make_csv(
+        '"11.3.2026";"12.3.2026";"Odchozí";"Odchozí platba";"OBJEDNAVKA 588124662";"2171532";"0800";"";"Alza";"";"Retezovy olej";"";"";"";"";"-132,00";"CZK";"-132,00";"CZK";"1";"";"";"b45f3ee6-3b23-49af-b7f2-857095e0f6ae"'
+    )
+    result = PartnersParser().parse(csv_data)
+    assert result[0].counterparty_account == "2171532/0800"
+    assert result[0].description == "Retezovy olej"  # personal note wins
+
+
+def test_description_falls_back_to_message():
+    # col 10 (note) is empty, col 4 (message) is non-empty, col 3 (type) is "Odchozí platba"
+    csv_data = make_csv(
+        '"12.3.2026";"12.3.2026";"Odchozí";"Odchozí platba";"palmknihy.cz AMSU-NDOW-19A8";"2600285563";"2010";"CZ9320100000002600285563";"";"";"";"";"";"";"1366413833";"-572,00";"CZK";"-572,00";"CZK";"1";"";"";"17f9f997-32e4-4b29-9e66-8c2dae2547d6"'
+    )
+    result = PartnersParser().parse(csv_data)
+    assert result[0].description == "palmknihy.cz AMSU-NDOW-19A8"
+
+
+def test_invalid_header_raises():
+    bad_csv = b'"Wrong";"Header"\n"val1";"val2"'
+    with pytest.raises(ValueError, match="Unexpected CSV header"):
+        PartnersParser().parse(bad_csv)
+
+
+def test_short_row_raises():
+    # Row with only a few columns
+    short_row_csv = (HEADER + '\n"31.3.2026";"31.3.2026"').encode("utf-8")
+    with pytest.raises(ValueError, match="columns, expected 23"):
+        PartnersParser().parse(short_row_csv)
 
 
 def test_empty_rows_skipped():
