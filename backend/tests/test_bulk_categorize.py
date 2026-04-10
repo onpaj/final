@@ -17,9 +17,10 @@ def mock_db():
 
 
 @pytest.fixture
-def client(mock_db):
+async def client(mock_db):
     app.dependency_overrides[get_db] = lambda: mock_db
-    yield AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        yield c
     app.dependency_overrides.clear()
 
 
@@ -30,11 +31,10 @@ async def test_bulk_categorize_happy_path(client, mock_db):
     transaction_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
     category_id = str(uuid.uuid4())
 
-    async with client as c:
-        resp = await c.patch(
-            "/api/transactions/bulk-categorize",
-            json={"transaction_ids": transaction_ids, "category_id": category_id},
-        )
+    resp = await client.patch(
+        "/api/transactions/bulk-categorize",
+        json={"transaction_ids": transaction_ids, "category_id": category_id},
+    )
 
     assert resp.status_code == 204
     assert mock_db.execute.called
@@ -44,11 +44,10 @@ async def test_bulk_categorize_happy_path(client, mock_db):
 async def test_bulk_categorize_empty_transaction_ids_rejected(client, mock_db):
     category_id = str(uuid.uuid4())
 
-    async with client as c:
-        resp = await c.patch(
-            "/api/transactions/bulk-categorize",
-            json={"transaction_ids": [], "category_id": category_id},
-        )
+    resp = await client.patch(
+        "/api/transactions/bulk-categorize",
+        json={"transaction_ids": [], "category_id": category_id},
+    )
 
     assert resp.status_code == 422
     assert not mock_db.commit.called
@@ -57,11 +56,10 @@ async def test_bulk_categorize_empty_transaction_ids_rejected(client, mock_db):
 async def test_bulk_categorize_missing_category_id_rejected(client, mock_db):
     transaction_ids = [str(uuid.uuid4())]
 
-    async with client as c:
-        resp = await c.patch(
-            "/api/transactions/bulk-categorize",
-            json={"transaction_ids": transaction_ids},
-        )
+    resp = await client.patch(
+        "/api/transactions/bulk-categorize",
+        json={"transaction_ids": transaction_ids},
+    )
 
     assert resp.status_code == 422
     assert not mock_db.commit.called

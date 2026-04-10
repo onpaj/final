@@ -89,7 +89,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
           </select>
           <button
             className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!targetCategoryId || bulkMutation.isPending}
+            disabled={selected.size === 0 || !targetCategoryId || bulkMutation.isPending}
             onClick={() =>
               bulkMutation.mutate({
                 transaction_ids: Array.from(selected),
