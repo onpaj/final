@@ -1,0 +1,118 @@
+from datetime import datetime, timezone
+from decimal import Decimal
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.models import Category, LlmClassification, Rule, Transaction
+from app.services.rules_engine import RulesEngine
+from app.services.anthropic_client import AnthropicClient, CONFIDENCE_THRESHOLD, AnthropicClassificationError
+
+
+class CategorizationService:
+    def __init__(self, db: AsyncSession):
+        self._db = db
+        self._llm = AnthropicClient()
+
+    async def _load_rules(self) -> list[dict]:
+        result = await self._db.execute(
+            select(Rule).where(Rule.enabled == True).order_by(Rule.priority.desc())
+        )
+        rules = result.scalars().all()
+        return [
+            {
+                "id": r.id,
+                "match_type": r.match_type,
+                "match_value": r.match_value,
+                "category_id": r.category_id,
+                "priority": r.priority,
+                "enabled": r.enabled,
+            }
+            for r in rules
+        ]
+
+    async def _load_category_names(self) -> list[str]:
+        result = await self._db.execute(select(Category.name))
+        return [row[0] for row in result.all()]
+
+    async def _categorize_one(self, tx: Transaction, rules: list[dict]) -> None:
+        from app.services.parsers.base import TransactionRow
+
+        row = TransactionRow(
+            booking_date=tx.booking_date,
+            value_date=tx.value_date,
+            amount=tx.amount,
+            currency=tx.currency,
+            counterparty_name=tx.counterparty_name,
+            counterparty_account=tx.counterparty_account,
+            description=tx.description,
+            raw_reference=tx.raw_reference,
+        )
+
+        match = RulesEngine.apply(row, rules)
+        if match:
+            tx.category_id = match.category_id
+            tx.categorization_source = "rule"
+            tx.confidence = Decimal("1.0")
+            rule_obj = await self._db.get(Rule, match.rule_id)
+            if rule_obj:
+                rule_obj.hit_count += 1
+                rule_obj.last_hit_at = datetime.now(timezone.utc)
+            return
+
+        # LLM fallback
+        categories = await self._load_category_names()
+        try:
+            result = self._llm.classify(
+                counterparty=tx.counterparty_name,
+                description=tx.description,
+                amount=tx.amount,
+                categories=categories,
+            )
+        except AnthropicClassificationError:
+            # Leave uncategorized for manual review
+            return
+
+        cat_result = await self._db.execute(
+            select(Category).where(Category.name == result.category_name)
+        )
+        category = cat_result.scalar_one_or_none()
+
+        accepted = result.confidence >= CONFIDENCE_THRESHOLD and category is not None
+        log = LlmClassification(
+            transaction_id=tx.id,
+            model=result.model,
+            suggested_category_id=category.id if category else None,
+            accepted=accepted,
+            confidence=result.confidence,
+            reasoning=result.reasoning,
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+        )
+        self._db.add(log)
+
+        if accepted:
+            tx.category_id = category.id
+            tx.categorization_source = "llm"
+            tx.confidence = result.confidence
+
+    async def run_batch(self, transaction_ids: list) -> dict:
+        result = await self._db.execute(
+            select(Transaction).where(Transaction.id.in_(transaction_ids))
+        )
+        transactions = result.scalars().all()
+        rules = await self._load_rules()
+
+        categorized = 0
+        needs_review = 0
+        for tx in transactions:
+            if tx.category_id is not None:
+                continue
+            await self._categorize_one(tx, rules)
+            if tx.category_id is not None:
+                categorized += 1
+            else:
+                needs_review += 1
+
+        await self._db.commit()
+        return {"categorized": categorized, "needs_review": needs_review}

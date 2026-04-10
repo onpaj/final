@@ -38,6 +38,7 @@ class ImportService:
 
         imported = 0
         duplicates = 0
+        new_ids = []
         try:
             parser = parser_cls()
             rows = parser.parse(file_bytes)
@@ -64,11 +65,18 @@ class ImportService:
                     hash_key=hash_key,
                 )
                 db.add(tx)
+                await db.flush()
+                new_ids.append(tx.id)
                 imported += 1
             batch.imported_count = imported
             batch.duplicate_count = duplicates
             batch.status = "completed"
+            await db.commit()
+            if new_ids:
+                from app.services.categorization_service import CategorizationService
+                cat_service = CategorizationService(db)
+                await cat_service.run_batch(new_ids)
         except Exception as exc:
             batch.status = "failed"
             batch.error_message = str(exc)
-        await db.commit()
+            await db.commit()
