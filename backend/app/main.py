@@ -10,3 +10,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from app.api import accounts
+
+app.include_router(accounts.router, prefix="/api/accounts", tags=["accounts"])
