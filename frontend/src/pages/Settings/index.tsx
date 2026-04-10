@@ -30,14 +30,14 @@ function LlmCostSection() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r: any, i: number) => (
-                <tr key={i} className="border-t border-gray-100">
+              {rows.map((r: any) => (
+                <tr key={`${r.year}-${r.month}-${r.model}`} className="border-t border-gray-100">
                   <td className="px-4 py-2">{r.year}-{String(r.month).padStart(2, "0")}</td>
                   <td className="px-4 py-2 font-mono text-xs">{r.model}</td>
                   <td className="px-4 py-2">{r.calls}</td>
                   <td className="px-4 py-2">{r.prompt_tokens?.toLocaleString()}</td>
                   <td className="px-4 py-2">{r.completion_tokens?.toLocaleString()}</td>
-                  <td className="px-4 py-2">${r.estimated_cost_usd}</td>
+                  <td className="px-4 py-2">${r.estimated_cost_usd.toFixed(4)}</td>
                 </tr>
               ))}
             </tbody>
