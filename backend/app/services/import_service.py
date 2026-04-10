@@ -103,6 +103,61 @@ class ImportService:
             raise
 
     @classmethod
+    async def process_batch(
+        cls,
+        db: AsyncSession,
+        batch: ImportBatch,
+        account: Account,
+        file_bytes: bytes,
+    ) -> None:
+        """Parse and insert transactions into an existing batch. Updates batch status in-place."""
+        parser = PARSER_REGISTRY.get(account.bank)
+        if parser is None:
+            batch.status = "failed"
+            batch.error_message = f"No parser for bank '{account.bank}'. Use generic CSV mapper."
+            await db.commit()
+            return
+
+        rows = parser.parse(file_bytes)
+        batch.row_count = len(rows)
+
+        try:
+            hash_map = {cls.compute_hash_key(account.id, row): row for row in rows}
+
+            existing_result = await db.execute(
+                select(Transaction.hash_key).where(
+                    Transaction.hash_key.in_(list(hash_map.keys()))
+                )
+            )
+            existing_keys = {r[0] for r in existing_result.all()}
+            new_rows = {k: v for k, v in hash_map.items() if k not in existing_keys}
+
+            for hash_key, row in new_rows.items():
+                tx = Transaction(
+                    account_id=account.id,
+                    import_batch_id=batch.id,
+                    booking_date=row.booking_date,
+                    value_date=row.value_date,
+                    amount=row.amount,
+                    currency=row.currency,
+                    counterparty_name=row.counterparty_name,
+                    counterparty_account=row.counterparty_account,
+                    description=row.description,
+                    raw_reference=row.raw_reference,
+                    hash_key=hash_key,
+                )
+                db.add(tx)
+
+            batch.imported_count = len(new_rows)
+            batch.duplicate_count = len(rows) - len(new_rows)
+            batch.status = "completed"
+        except Exception as exc:
+            batch.status = "failed"
+            batch.error_message = str(exc)
+
+        await db.commit()
+
+    @classmethod
     async def get_batches(cls, db: AsyncSession) -> list[ImportBatch]:
         result = await db.execute(
             select(ImportBatch).order_by(ImportBatch.imported_at.desc())
