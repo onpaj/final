@@ -69,9 +69,9 @@ class Transaction(Base):
     counterparty_account: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # TODO(M2): Add ForeignKey("categories.id") here and generate an Alembic migration
-    # to add the FK constraint once the categories table is created in M2.
-    category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True
+    )
     categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     is_transfer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -83,3 +83,58 @@ class Transaction(Base):
 
     account: Mapped["Account"] = relationship(back_populates="transactions")
     import_batch: Mapped["ImportBatch"] = relationship(back_populates="transactions")
+
+
+class CategoryGroup(Base):
+    __tablename__ = "category_groups"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    color: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    categories: Mapped[list["Category"]] = relationship(back_populates="group")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    group_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("category_groups.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    is_income: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    color: Mapped[str | None] = mapped_column(String, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    group: Mapped["CategoryGroup"] = relationship(back_populates="categories")
+
+
+class Rule(Base):
+    __tablename__ = "rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    match_type: Mapped[str] = mapped_column(String, nullable=False)
+    match_value: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_hit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LlmClassification(Base):
+    __tablename__ = "llm_classifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False)
+    model: Mapped[str] = mapped_column(String, nullable=False)
+    suggested_category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    accepted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
+    reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
