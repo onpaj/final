@@ -1,9 +1,12 @@
+import csv
+import io
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +35,46 @@ class TransactionOut(BaseModel):
     notes: str | None
     created_at: datetime
     model_config = {"from_attributes": True}
+
+
+@router.get("/export")
+async def export_csv(
+    account_id: uuid.UUID | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    category_id: uuid.UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    q = select(Transaction).order_by(Transaction.booking_date.desc())
+    if account_id:
+        q = q.where(Transaction.account_id == account_id)
+    if date_from:
+        q = q.where(Transaction.booking_date >= date_from)
+    if date_to:
+        q = q.where(Transaction.booking_date <= date_to)
+    if category_id:
+        q = q.where(Transaction.category_id == category_id)
+    result = await db.execute(q)
+    transactions = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["date", "amount", "currency", "counterparty", "description",
+                     "category_id", "source", "is_transfer"])
+    for tx in transactions:
+        writer.writerow([
+            tx.booking_date, tx.amount, tx.currency,
+            tx.counterparty_name or "", tx.description or "",
+            tx.category_id or "", tx.categorization_source or "",
+            tx.is_transfer,
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=transactions.csv"},
+    )
 
 
 @router.get("", response_model=list[TransactionOut])

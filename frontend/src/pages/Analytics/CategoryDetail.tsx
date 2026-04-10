@@ -64,11 +64,22 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     }
   }
 
+  const exportUrl = `http://localhost:8000/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&category_id=${categoryId}`;
+
   return (
     <div>
-      <button className="text-blue-600 text-sm mb-4 hover:underline" onClick={onBack}>
-        ← Back to group
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button className="text-blue-600 text-sm hover:underline" onClick={onBack}>
+          ← Back to group
+        </button>
+        <a
+          href={exportUrl}
+          className="text-blue-600 text-sm hover:underline"
+          download
+        >
+          Export CSV
+        </a>
+      </div>
       <h2 className="text-xl font-bold mb-4">{categoryName}</h2>
 
       {selected.size > 0 && (
