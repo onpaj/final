@@ -22,6 +22,7 @@ export default function BatchHistory() {
   const retry = useMutation({
     mutationFn: (id: string) => client.post(`/api/imports/${id}/retry`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["batches"] }),
+    onError: () => alert("Retry failed — the original file may no longer be available."),
   });
 
   if (isLoading) return <p className="text-gray-400 text-sm">Loading…</p>;
@@ -57,7 +58,7 @@ export default function BatchHistory() {
                     <button
                       className="ml-2 text-blue-500 text-xs hover:underline"
                       onClick={() => retry.mutate(b.id)}
-                      disabled={retry.isPending}
+                      disabled={retry.isPending && retry.variables === b.id}
                     >
                       Retry
                     </button>
