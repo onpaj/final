@@ -1,5 +1,6 @@
 sample_data/
 data/
+data/uploads/
 .superpowers/
 backend/.env
 backend/.venv/

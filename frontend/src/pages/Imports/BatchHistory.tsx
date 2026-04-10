@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listBatches, type Batch } from "../../api/imports";
 import { listAccounts } from "../../api/accounts";
+import client from "../../api/client";
 
 const STATUS_BADGE: Record<Batch["status"], string> = {
   processing: "bg-yellow-100 text-yellow-800",
@@ -9,6 +10,7 @@ const STATUS_BADGE: Record<Batch["status"], string> = {
 };
 
 export default function BatchHistory() {
+  const qc = useQueryClient();
   const { data: batches = [], isLoading, isError } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
@@ -16,6 +18,11 @@ export default function BatchHistory() {
   });
   const { data: accounts = [] } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? id;
+
+  const retry = useMutation({
+    mutationFn: (id: string) => client.post(`/api/imports/${id}/retry`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["batches"] }),
+  });
 
   if (isLoading) return <p className="text-gray-400 text-sm">Loading…</p>;
   if (isError) return <p className="text-red-500 text-sm px-6 py-4">Failed to load import history.</p>;
@@ -46,6 +53,15 @@ export default function BatchHistory() {
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status]}`} title={b.error_message ?? undefined}>
                     {b.status}
                   </span>
+                  {b.status === "failed" && (
+                    <button
+                      className="ml-2 text-blue-500 text-xs hover:underline"
+                      onClick={() => retry.mutate(b.id)}
+                      disabled={retry.isPending}
+                    >
+                      Retry
+                    </button>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString()}</td>
               </tr>
