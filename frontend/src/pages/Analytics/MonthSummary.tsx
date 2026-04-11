@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { MonthlySummary } from "../../api/analytics";
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function MonthSummary({ summary, onGroupClick }: Props) {
+  const { t } = useTranslation();
   const expenseGroups = summary.groups.filter((g) => g.total < 0);
   const pieData = expenseGroups.map((g) => ({ name: g.name, value: Math.abs(g.total), color: g.color }));
 
@@ -14,9 +16,9 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
     <div>
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Income", value: summary.income, color: "text-green-600", raw: false },
-          { label: "Expenses", value: Math.abs(summary.expenses), color: "text-red-500", raw: false },
-          { label: "Savings Rate", value: `${(summary.savings_rate * 100).toFixed(0)}%`, color: "text-blue-600", raw: true },
+          { label: t("analytics.income"), value: summary.income, color: "text-green-600", raw: false },
+          { label: t("analytics.expenses"), value: Math.abs(summary.expenses), color: "text-red-500", raw: false },
+          { label: t("analytics.savingsRate"), value: `${(summary.savings_rate * 100).toFixed(0)}%`, color: "text-blue-600", raw: true },
         ].map(({ label, value, color, raw }) => (
           <div key={label} className="bg-white border border-gray-200 rounded-lg p-4">
             <p className="text-xs text-gray-500 uppercase mb-1">{label}</p>
@@ -29,7 +31,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold mb-4 text-gray-700">Spending by Group</h3>
+          <h3 className="text-sm font-semibold mb-4 text-gray-700">{t("analytics.spendingByGroup")}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90}>
@@ -43,7 +45,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <h3 className="text-sm font-semibold px-4 py-3 border-b text-gray-700">Groups</h3>
+          <h3 className="text-sm font-semibold px-4 py-3 border-b text-gray-700">{t("analytics.groups")}</h3>
           <table className="w-full text-sm">
             <tbody>
               {summary.groups.map((g) => (

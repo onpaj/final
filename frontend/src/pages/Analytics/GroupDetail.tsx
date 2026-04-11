@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { GroupSummary } from "../../api/analytics";
 
 interface Props {
@@ -7,18 +8,20 @@ interface Props {
 }
 
 export default function GroupDetail({ group, onCategoryClick, onBack }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div>
       <button className="text-blue-600 text-sm mb-4 hover:underline" onClick={onBack}>
-        ← Back to overview
+        {t("analytics.backToOverview")}
       </button>
       <h2 className="text-xl font-bold mb-4">{group.name}</h2>
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="px-4 py-2 text-left">Category</th>
-              <th className="px-4 py-2 text-right">Total</th>
+              <th className="px-4 py-2 text-left">{t("analytics.category")}</th>
+              <th className="px-4 py-2 text-right">{t("analytics.total")}</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
