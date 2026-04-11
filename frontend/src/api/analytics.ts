@@ -3,6 +3,7 @@ import client from "./client";
 export interface CategorySummary {
   id: string;
   name: string;
+  category_slug?: string;
   total: number;
   is_income: boolean;
 }
@@ -10,6 +11,7 @@ export interface CategorySummary {
 export interface GroupSummary {
   name: string;
   color: string;
+  group_slug?: string;
   total: number;
   categories: CategorySummary[];
 }
@@ -36,7 +38,7 @@ export async function getTrends(params: {
   to_year: number;
   to_month: number;
   account_id?: string;
-}): Promise<Array<{ year: number; month: number; category: string; group: string; is_income: boolean; total: number }>> {
+}): Promise<Array<{ year: number; month: number; category: string; group: string; group_slug?: string; is_income: boolean; total: number }>> {
   const { data } = await client.get("/api/analytics/trends", { params });
   return data;
 }

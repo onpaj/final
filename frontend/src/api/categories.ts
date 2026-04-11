@@ -4,12 +4,16 @@ export interface Category {
   id: string;
   group_id: string;
   name: string;
+  slug?: string;
   is_income: boolean;
 }
 
 export interface CategoryGroup {
   id: string;
   name: string;
+  slug?: string;
+  color?: string;
+  sort_order: number;
   categories: Category[];
 }
 
