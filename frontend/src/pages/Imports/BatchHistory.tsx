@@ -49,6 +49,11 @@ function BatchTransactions({ batchId }: { batchId: string }) {
 
 export default function BatchHistory() {
   const { t } = useTranslation();
+  const statusLabel = (s: Batch["status"]): string => {
+    if (s === "processing") return t("status.processing");
+    if (s === "failed") return t("status.failed");
+    return t("status.completed");
+  };
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<string | null>(null);
   const { data: batches = [], isLoading, isError } = useQuery({
@@ -104,7 +109,7 @@ export default function BatchHistory() {
                   <td className="px-4 py-3 text-gray-400">{b.duplicate_count}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[b.status]}`} title={b.error_message ?? undefined}>
-                      {b.status}
+                      {statusLabel(b.status)}
                     </span>
                     {b.status === "failed" && (
                       <button
@@ -116,7 +121,7 @@ export default function BatchHistory() {
                       </button>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-gray-400">{new Date(b.imported_at).toLocaleDateString("cs-CZ")}</td>
                 </tr>
                 {expanded === b.id && (
                   <tr key={`${b.id}-detail`}>

@@ -18,7 +18,8 @@
   "status": {
     "processing": "Zpracování…",
     "failed": "Import selhal",
-    "idle": "Nečinný"
+    "idle": "Nečinný",
+    "completed": "Dokončeno"
   },
   "analytics": {
     "title": "Analýzy — {{month}}",

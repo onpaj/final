@@ -18,7 +18,8 @@
   "status": {
     "processing": "Processing…",
     "failed": "Import failed",
-    "idle": "Idle"
+    "idle": "Idle",
+    "completed": "Completed"
   },
   "analytics": {
     "title": "Analytics — {{month}}",
