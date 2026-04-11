@@ -11,7 +11,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
   const { t } = useTranslation();
   const expenseGroups = summary.groups.filter((g) => g.total < 0);
   const pieData = expenseGroups.map((g) => ({
-    name: t("cat." + (g.group_slug ?? ""), { defaultValue: g.name }),
+    name: g.group_slug ? t("cat." + g.group_slug, { defaultValue: g.name }) : g.name,
     value: Math.abs(g.total),
     color: g.color,
   }));
@@ -60,7 +60,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
                 >
                   <td className="px-4 py-2.5">
                     <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: g.color }} />
-                    {t("cat." + (g.group_slug ?? ""), { defaultValue: g.name })}
+                    {g.group_slug ? t("cat." + g.group_slug, { defaultValue: g.name }) : g.name}
                   </td>
                   <td className={`px-4 py-2.5 text-right font-medium ${g.total >= 0 ? "text-green-600" : "text-gray-800"}`}>
                     {Math.abs(g.total).toLocaleString("cs-CZ")} CZK

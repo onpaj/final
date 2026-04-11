@@ -83,7 +83,7 @@ export default function CategoryDetail({ categoryId, categoryName, categorySlug,
           {t("analytics.exportCsv")}
         </a>
       </div>
-      <h2 className="text-xl font-bold mb-4">{t("cat." + (categorySlug ?? ""), { defaultValue: categoryName })}</h2>
+      <h2 className="text-xl font-bold mb-4">{categorySlug ? t("cat." + categorySlug, { defaultValue: categoryName }) : categoryName}</h2>
 
       {selected.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">

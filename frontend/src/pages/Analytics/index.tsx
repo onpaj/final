@@ -104,9 +104,9 @@ export default function AnalyticsPage() {
       {tab === "overview" && summary && level.view === "group" && (
         <GroupDetail
           group={summary.groups.find((g) => g.name === level.groupName)!}
-          groupSlug={level.view === "group" ? level.groupSlug : undefined}
+          groupSlug={level.groupSlug}
           onCategoryClick={(categoryId, categoryName, categorySlug) =>
-            setLevel({ view: "category", groupName: level.groupName, groupSlug: level.view === "group" ? level.groupSlug : undefined, categoryId, categoryName, categorySlug })
+            setLevel({ view: "category", groupName: level.groupName, groupSlug: level.groupSlug, categoryId, categoryName, categorySlug })
           }
           onBack={() => setLevel({ view: "summary" })}
         />
@@ -116,10 +116,10 @@ export default function AnalyticsPage() {
         <CategoryDetail
           categoryId={level.categoryId}
           categoryName={level.categoryName}
-          categorySlug={level.view === "category" ? level.categorySlug : undefined}
+          categorySlug={level.categorySlug}
           year={year}
           month={month}
-          onBack={() => setLevel({ view: "group", groupName: level.groupName, groupSlug: level.view === "category" ? level.groupSlug : undefined })}
+          onBack={() => setLevel({ view: "group", groupName: level.groupName, groupSlug: level.groupSlug })}
         />
       )}
     </div>
