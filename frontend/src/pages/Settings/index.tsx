@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { createAccount, deleteAccount, listAccounts } from "../../api/accounts";
 import client from "../../api/client";
 
 function LlmCostSection() {
+  const { t } = useTranslation();
   const { data: rows = [] } = useQuery({
     queryKey: ["llm-cost"],
     queryFn: async () => (await client.get("/api/settings/llm-cost")).data,
@@ -13,18 +15,25 @@ function LlmCostSection() {
 
   return (
     <section className="bg-white border border-gray-200 rounded-lg overflow-hidden mt-6">
-      <h2 className="text-lg font-semibold px-6 py-4 border-b">LLM Usage</h2>
+      <h2 className="text-lg font-semibold px-6 py-4 border-b">{t("settings.llmTitle")}</h2>
       <div className="px-6 py-4">
         <p className="text-sm text-gray-500 mb-4">
-          Total estimated cost: <strong className="text-gray-800">${total.toFixed(4)}</strong>
+          {t("settings.llmTotalCost")} <strong className="text-gray-800">${total.toFixed(4)}</strong>
         </p>
         {rows.length === 0 ? (
-          <p className="text-sm text-gray-400">No LLM calls recorded yet.</p>
+          <p className="text-sm text-gray-400">{t("settings.llmNoCalls")}</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                {["Month", "Model", "Calls", "Tokens In", "Tokens Out", "Est. Cost"].map((h) => (
+                {[
+                  t("settings.llmColMonth"),
+                  t("settings.llmColModel"),
+                  t("settings.llmColCalls"),
+                  t("settings.llmColTokensIn"),
+                  t("settings.llmColTokensOut"),
+                  t("settings.llmColCost"),
+                ].map((h) => (
                   <th key={h} className="px-4 py-2 text-left">{h}</th>
                 ))}
               </tr>
@@ -49,6 +58,7 @@ function LlmCostSection() {
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: accounts = [], isLoading } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
 
@@ -73,16 +83,16 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t("settings.title")}</h1>
 
       <section className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Add Account</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("settings.addAccount")}</h2>
         <form
           className="flex flex-col gap-3 max-w-md"
           onSubmit={(e) => { e.preventDefault(); create.mutate(); }}
         >
           <div className="flex flex-col gap-1">
-            <label htmlFor="acc-name" className="text-sm text-gray-600">Name</label>
+            <label htmlFor="acc-name" className="text-sm text-gray-600">{t("settings.fieldName")}</label>
             <input
               id="acc-name"
               className="border border-gray-300 rounded px-3 py-2 text-sm"
@@ -93,19 +103,19 @@ export default function SettingsPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="acc-bank" className="text-sm text-gray-600">Bank type</label>
+            <label htmlFor="acc-bank" className="text-sm text-gray-600">{t("settings.fieldBankType")}</label>
             <select
               id="acc-bank"
               className="border border-gray-300 rounded px-3 py-2 text-sm"
               value={bank}
               onChange={(e) => setBank(e.target.value)}
             >
-              <option value="partners">Partners Bank</option>
-              <option value="generic">Generic CSV</option>
+              <option value="partners">{t("settings.bankPartners")}</option>
+              <option value="generic">{t("settings.bankGeneric")}</option>
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="acc-iban" className="text-sm text-gray-600">IBAN (optional)</label>
+            <label htmlFor="acc-iban" className="text-sm text-gray-600">{t("settings.fieldIban")}</label>
             <input
               id="acc-iban"
               className="border border-gray-300 rounded px-3 py-2 text-sm font-mono"
@@ -115,7 +125,7 @@ export default function SettingsPage() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label htmlFor="acc-currency" className="text-sm text-gray-600">Currency</label>
+            <label htmlFor="acc-currency" className="text-sm text-gray-600">{t("settings.fieldCurrency")}</label>
             <select
               id="acc-currency"
               className="border border-gray-300 rounded px-3 py-2 text-sm"
@@ -132,23 +142,23 @@ export default function SettingsPage() {
             disabled={!name || create.isPending}
             className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50 self-start"
           >
-            {create.isPending ? "Adding…" : "Add Account"}
+            {create.isPending ? t("settings.adding") : t("settings.addAccount")}
           </button>
-          {create.isError && <p className="text-red-500 text-sm">Failed to create account.</p>}
+          {create.isError && <p className="text-red-500 text-sm">{t("settings.createFailed")}</p>}
         </form>
       </section>
 
       <section className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <h2 className="text-lg font-semibold px-6 py-4 border-b">Accounts</h2>
-        {isLoading && <p className="px-6 py-4 text-sm text-gray-400">Loading…</p>}
+        <h2 className="text-lg font-semibold px-6 py-4 border-b">{t("settings.accountsTitle")}</h2>
+        {isLoading && <p className="px-6 py-4 text-sm text-gray-400">{t("common.loading")}</p>}
         {!isLoading && accounts.length === 0 && (
-          <p className="px-6 py-8 text-sm text-gray-400">No accounts yet.</p>
+          <p className="px-6 py-8 text-sm text-gray-400">{t("settings.noAccounts")}</p>
         )}
         {accounts.length > 0 && (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
               <tr>
-                {["Name", "Bank", "IBAN", "Currency", ""].map((h) => (
+                {[t("settings.colName"), t("settings.colBank"), t("settings.colIban"), t("settings.colCurrency"), ""].map((h) => (
                   <th key={h} className="px-4 py-2 text-left">{h}</th>
                 ))}
               </tr>
@@ -165,7 +175,7 @@ export default function SettingsPage() {
                       className="text-red-400 hover:text-red-600 text-xs"
                       onClick={() => remove.mutate(a.id)}
                     >
-                      Remove
+                      {t("common.remove")}
                     </button>
                   </td>
                 </tr>

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { deleteRule, listRules } from "../../api/rules";
 
 export default function RulesPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: rules = [] } = useQuery({
     queryKey: ["rules"],
@@ -15,12 +17,12 @@ export default function RulesPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Categorization Rules</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("rules.title")}</h1>
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              {["Priority", "Name", "Type", "Hits", "Status", ""].map((h) => (
+              {[t("rules.colPriority"), t("rules.colName"), t("rules.colType"), t("rules.colHits"), t("common.status"), ""].map((h) => (
                 <th key={h} className="px-4 py-2 text-left">
                   {h}
                 </th>
@@ -45,7 +47,7 @@ export default function RulesPage() {
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >
-                    {r.enabled ? "Active" : "Disabled"}
+                    {r.enabled ? t("rules.active") : t("rules.disabled")}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -53,7 +55,7 @@ export default function RulesPage() {
                     className="text-red-500 text-xs hover:underline"
                     onClick={() => remove.mutate(r.id)}
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 </td>
               </tr>
