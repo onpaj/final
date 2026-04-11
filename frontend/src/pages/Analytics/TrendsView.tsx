@@ -42,7 +42,7 @@ export default function TrendsView({ year, month }: Props) {
         <LineChart data={chartData}>
           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => `${v.toLocaleString("cs-CZ")} CZK`} />
+          <Tooltip formatter={(v) => typeof v === "number" ? `${v.toLocaleString("cs-CZ")} CZK` : v} />
           <Legend />
           {groupList.map((g, i) => (
             <Line key={g} type="monotone" dataKey={g} stroke={COLORS[i % COLORS.length]} dot={false} />

@@ -39,7 +39,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
                   <Cell key={entry.name} fill={entry.color || "#ccc"} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => `${v.toLocaleString("cs-CZ")} CZK`} />
+              <Tooltip formatter={(v) => typeof v === "number" ? `${v.toLocaleString("cs-CZ")} CZK` : v} />
             </PieChart>
           </ResponsiveContainer>
         </div>
