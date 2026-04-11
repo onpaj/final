@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { listTransactions } from "../../api/transactions";
 import { listCategories, type Category } from "../../api/categories";
 import client from "../../api/client";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function CategoryDetail({ categoryId, categoryName, year, month, onBack }: Props) {
+  const { t } = useTranslation();
   const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
   const dateTo = `${year}-${String(month).padStart(2, "0")}-31`;
 
@@ -70,28 +72,28 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     <div>
       <div className="flex items-center justify-between mb-4">
         <button className="text-blue-600 text-sm hover:underline" onClick={onBack}>
-          ← Back to group
+          {t("analytics.backToGroup")}
         </button>
         <a
           href={exportUrl}
           className="text-blue-600 text-sm hover:underline"
           download
         >
-          Export CSV
+          {t("analytics.exportCsv")}
         </a>
       </div>
       <h2 className="text-xl font-bold mb-4">{categoryName}</h2>
 
       {selected.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-          <span className="font-medium text-blue-800">{selected.size} selected —</span>
-          <span className="text-blue-700">Assign to:</span>
+          <span className="font-medium text-blue-800">{t("analytics.selectedCount", { count: selected.size })}</span>
+          <span className="text-blue-700">{t("analytics.assignTo")}</span>
           <select
             className="border border-blue-300 rounded px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
             value={targetCategoryId}
             onChange={(e) => setTargetCategoryId(e.target.value)}
           >
-            <option value="">Pick a category…</option>
+            <option value="">{t("analytics.pickCategory")}</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
@@ -108,16 +110,16 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
               })
             }
           >
-            {bulkMutation.isPending ? "Applying…" : "Apply"}
+            {bulkMutation.isPending ? t("analytics.applying") : t("analytics.apply")}
           </button>
           {bulkMutation.isError && (
-            <p className="text-red-500 text-sm">Failed to apply. Please try again.</p>
+            <p className="text-red-500 text-sm">{t("analytics.applyFailed")}</p>
           )}
         </div>
       )}
 
       {isLoading ? (
-        <p className="text-gray-400 text-sm">Loading…</p>
+        <p className="text-gray-400 text-sm">{t("common.loading")}</p>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
@@ -132,7 +134,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
                     className="cursor-pointer"
                   />
                 </th>
-                {["Date", "Counterparty", "Description", "Amount"].map((h) => (
+                {[t("analytics.txDate"), t("analytics.txCounterparty"), t("analytics.txDescription"), t("analytics.txAmount")].map((h) => (
                   <th key={h} className="px-4 py-2 text-left">{h}</th>
                 ))}
               </tr>
@@ -165,7 +167,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
             </tbody>
           </table>
           {transactions.length === 0 && (
-            <p className="px-4 py-8 text-center text-gray-400 text-sm">No transactions.</p>
+            <p className="px-4 py-8 text-center text-gray-400 text-sm">{t("analytics.noTransactions")}</p>
           )}
         </div>
       )}
