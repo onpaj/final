@@ -80,5 +80,23 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    conn = op.get_bind()
+
+    for eng_name, (czech_name, _slug) in GROUP_MAP.items():
+        conn.execute(
+            sa.text(
+                "UPDATE category_groups SET name = :eng_name WHERE name = :czech_name"
+            ),
+            {"eng_name": eng_name, "czech_name": czech_name},
+        )
+
+    for eng_name, (czech_name, _slug) in CATEGORY_MAP.items():
+        conn.execute(
+            sa.text(
+                "UPDATE categories SET name = :eng_name WHERE name = :czech_name"
+            ),
+            {"eng_name": eng_name, "czech_name": czech_name},
+        )
+
     op.drop_column('categories', 'slug')
     op.drop_column('category_groups', 'slug')
