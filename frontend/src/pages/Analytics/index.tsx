@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getMonthlySummary } from "../../api/analytics";
 import MonthSummary from "./MonthSummary";
 import GroupDetail from "./GroupDetail";
@@ -13,6 +14,7 @@ type Level =
   | { view: "category"; groupName: string; categoryId: string; categoryName: string };
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation();
   const now = new Date();
   const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth();
   const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
@@ -43,46 +45,50 @@ export default function AnalyticsPage() {
     setLevel({ view: "summary" });
   }
 
+  const tabLabels: Record<"overview" | "trends", string> = {
+    overview: t("analytics.tabOverview"),
+    trends: t("analytics.tabTrends"),
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       {isStale && (
         <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-          <span className="text-blue-700 text-sm">New data available — import completed.</span>
+          <span className="text-blue-700 text-sm">{t("analytics.newData")}</span>
           <button
             className="bg-blue-600 text-white text-sm px-3 py-1 rounded"
             onClick={() => { refetch(); markFresh(); }}
           >
-            Refresh
+            {t("analytics.refresh")}
           </button>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Analytics — {monthLabel}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("analytics.title", { month: monthLabel })}</h1>
         <div className="flex items-center gap-2">
           <button className="text-gray-500 hover:text-gray-800 px-2" onClick={prevMonth}>‹</button>
           <button className="text-gray-500 hover:text-gray-800 px-2" onClick={nextMonth}>›</button>
         </div>
       </div>
 
-      {/* Tab toggle — only show at summary level */}
       {level.view === "summary" && (
         <div className="flex gap-1 mb-6 border-b border-gray-200">
-          {(["overview", "trends"] as const).map((t) => (
+          {(["overview", "trends"] as const).map((key) => (
             <button
-              key={t}
-              className={`px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
-                tab === t ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"
+              key={key}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                tab === key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"
               }`}
-              onClick={() => setTab(t)}
+              onClick={() => setTab(key)}
             >
-              {t}
+              {tabLabels[key]}
             </button>
           ))}
         </div>
       )}
 
-      {isLoading && <p className="text-gray-400 text-sm">Loading…</p>}
+      {isLoading && <p className="text-gray-400 text-sm">{t("common.loading")}</p>}
 
       {tab === "trends" && level.view === "summary" && (
         <TrendsView year={year} month={month} />
