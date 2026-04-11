@@ -12,6 +12,7 @@ class CategoryOut(BaseModel):
     id: uuid.UUID
     group_id: uuid.UUID
     name: str
+    slug: str | None = None
     is_income: bool
     is_system: bool
     color: str | None
@@ -20,6 +21,7 @@ class CategoryOut(BaseModel):
 class GroupOut(BaseModel):
     id: uuid.UUID
     name: str
+    slug: str | None = None
     color: str | None
     sort_order: int
     categories: list[CategoryOut]

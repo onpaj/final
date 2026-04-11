@@ -25,10 +25,13 @@ class AnalyticsService:
         account_filter = "AND t.account_id = :account_id" if account_id else ""
         sql = text(f"""
             SELECT
+                cg.id AS group_id,
                 cg.name AS group_name,
+                cg.slug AS group_slug,
                 cg.color AS group_color,
                 cg.sort_order AS group_sort,
                 c.name AS category_name,
+                c.slug AS category_slug,
                 c.is_income,
                 c.id AS category_id,
                 COALESCE(SUM(t.amount), 0) AS total
@@ -40,7 +43,7 @@ class AnalyticsService:
                 AND EXTRACT(YEAR FROM t.booking_date) = :year
                 AND EXTRACT(MONTH FROM t.booking_date) = :month
                 {account_filter}
-            GROUP BY cg.id, cg.name, cg.color, cg.sort_order, c.id, c.name, c.is_income
+            GROUP BY cg.id, cg.name, cg.slug, cg.color, cg.sort_order, c.id, c.name, c.slug, c.is_income
             ORDER BY cg.sort_order, c.name
         """)
         params: dict = {"year": year, "month": month}
@@ -55,13 +58,20 @@ class AnalyticsService:
         expenses = Decimal("0")
 
         for row in rows:
-            gname = row.group_name
-            if gname not in groups:
-                groups[gname] = {"name": gname, "color": row.group_color, "total": Decimal("0"), "categories": []}
-            groups[gname]["total"] += row.total
-            groups[gname]["categories"].append({
+            gid = str(row.group_id)
+            if gid not in groups:
+                groups[gid] = {
+                    "name": row.group_name,
+                    "group_slug": row.group_slug,
+                    "color": row.group_color,
+                    "total": Decimal("0"),
+                    "categories": [],
+                }
+            groups[gid]["total"] += row.total
+            groups[gid]["categories"].append({
                 "id": str(row.category_id),
                 "name": row.category_name,
+                "category_slug": row.category_slug,
                 "total": float(row.total),
                 "is_income": row.is_income,
             })
@@ -86,7 +96,9 @@ class AnalyticsService:
                 EXTRACT(YEAR FROM t.booking_date)::int AS year,
                 EXTRACT(MONTH FROM t.booking_date)::int AS month,
                 c.name AS category_name,
+                cg.id AS group_id,
                 cg.name AS group_name,
+                cg.slug AS group_slug,
                 c.is_income,
                 COALESCE(SUM(t.amount), 0) AS total
             FROM transactions t
@@ -97,7 +109,7 @@ class AnalyticsService:
                 AND (EXTRACT(YEAR FROM t.booking_date) * 100 + EXTRACT(MONTH FROM t.booking_date))
                     BETWEEN :from_ym AND :to_ym
                 {account_filter}
-            GROUP BY year, month, c.id, c.name, cg.name, c.is_income
+            GROUP BY year, month, c.id, c.name, cg.id, cg.name, cg.slug, c.is_income
             ORDER BY year, month, cg.name, c.name
         """)
         params: dict = {
@@ -112,6 +124,7 @@ class AnalyticsService:
             {
                 "year": row.year, "month": row.month,
                 "category": row.category_name, "group": row.group_name,
+                "group_slug": row.group_slug,
                 "is_income": row.is_income, "total": float(row.total),
             }
             for row in result.all()
