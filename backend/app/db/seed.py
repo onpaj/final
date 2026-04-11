@@ -4,44 +4,44 @@ from app.db.session import AsyncSessionLocal
 from app.db.models import CategoryGroup, Category
 
 TAXONOMY = [
-    {"name": "Living",    "color": "#4CAF50", "sort_order": 1, "categories": [
-        {"name": "Groceries"},
-        {"name": "Rent"},
-        {"name": "Utilities"},
-        {"name": "Household"},
+    {"name": "Bydlení",    "slug": "living",     "color": "#4CAF50", "sort_order": 1, "categories": [
+        {"name": "Potraviny",        "slug": "groceries"},
+        {"name": "Nájem",            "slug": "rent"},
+        {"name": "Energie a služby", "slug": "utilities"},
+        {"name": "Domácnost",        "slug": "household"},
     ]},
-    {"name": "Transport", "color": "#2196F3", "sort_order": 2, "categories": [
-        {"name": "Fuel"},
-        {"name": "Public Transport"},
-        {"name": "Car Maintenance"},
-        {"name": "Parking"},
+    {"name": "Doprava",    "slug": "transport",  "color": "#2196F3", "sort_order": 2, "categories": [
+        {"name": "Pohonné hmoty",    "slug": "fuel"},
+        {"name": "Veřejná doprava",  "slug": "public_transport"},
+        {"name": "Údržba auta",      "slug": "car_maintenance"},
+        {"name": "Parkování",        "slug": "parking"},
     ]},
-    {"name": "Leisure",   "color": "#FF9800", "sort_order": 3, "categories": [
-        {"name": "Restaurants"},
-        {"name": "Entertainment"},
-        {"name": "Travel"},
-        {"name": "Subscriptions"},
+    {"name": "Volný čas",  "slug": "leisure",    "color": "#FF9800", "sort_order": 3, "categories": [
+        {"name": "Restaurace",       "slug": "restaurants"},
+        {"name": "Zábava",           "slug": "entertainment"},
+        {"name": "Cestování",        "slug": "travel"},
+        {"name": "Předplatné",       "slug": "subscriptions"},
     ]},
-    {"name": "Health",    "color": "#E91E63", "sort_order": 4, "categories": [
-        {"name": "Pharmacy"},
-        {"name": "Doctor"},
-        {"name": "Gym"},
+    {"name": "Zdraví",     "slug": "health",     "color": "#E91E63", "sort_order": 4, "categories": [
+        {"name": "Lékárna",          "slug": "pharmacy"},
+        {"name": "Lékař",            "slug": "doctor"},
+        {"name": "Fitness",          "slug": "gym"},
     ]},
-    {"name": "Income",    "color": "#9C27B0", "sort_order": 5, "categories": [
-        {"name": "Salary", "is_income": True},
-        {"name": "Freelance", "is_income": True},
-        {"name": "Other Income", "is_income": True},
+    {"name": "Příjmy",     "slug": "income",     "color": "#009688", "sort_order": 5, "categories": [
+        {"name": "Plat",             "slug": "salary", "is_income": True},
+        {"name": "Freelance",        "slug": "freelance", "is_income": True},
+        {"name": "Ostatní příjmy",   "slug": "other_income", "is_income": True},
     ]},
-    {"name": "Savings",   "color": "#009688", "sort_order": 6, "categories": [
-        {"name": "Savings Transfer"},
-        {"name": "Investment"},
+    {"name": "Úspory",     "slug": "savings",    "color": "#3F51B5", "sort_order": 6, "categories": [
+        {"name": "Převod do úspor",  "slug": "savings_transfer"},
+        {"name": "Investice",        "slug": "investment"},
     ]},
-    {"name": "Transfers", "color": "#607D8B", "sort_order": 7, "categories": [
-        {"name": "Internal Transfer", "is_system": True},
+    {"name": "Převody",    "slug": "transfers",  "color": "#9C27B0", "sort_order": 7, "categories": [
+        {"name": "Interní převod",   "slug": "internal_transfer", "is_system": True},
     ]},
-    {"name": "Other",     "color": "#9E9E9E", "sort_order": 8, "categories": [
-        {"name": "Fees & Charges"},
-        {"name": "Uncategorized"},
+    {"name": "Ostatní",    "slug": "other",      "color": "#607D8B", "sort_order": 8, "categories": [
+        {"name": "Poplatky",         "slug": "fees_charges"},
+        {"name": "Nezařazeno",       "slug": "uncategorized"},
     ]},
 ]
 
