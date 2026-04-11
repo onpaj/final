@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { listBatches } from "../api/imports";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function ProcessingStatus({ onJobCompleted }: Props) {
+  const { t } = useTranslation();
   const { data: batches = [] } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
@@ -30,7 +32,7 @@ export default function ProcessingStatus({ onJobCompleted }: Props) {
   const hasFailed = latest?.status === "failed";
 
   const color = isProcessing ? "bg-yellow-400" : hasFailed ? "bg-red-500" : "bg-green-500";
-  const title = isProcessing ? "Processing…" : hasFailed ? "Import failed" : "Idle";
+  const title = isProcessing ? t("status.processing") : hasFailed ? t("status.failed") : t("status.idle");
 
   return (
     <span className="flex items-center gap-2 text-sm text-gray-500" title={title}>

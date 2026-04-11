@@ -1,16 +1,18 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ProcessingStatus from "./ProcessingStatus";
 import { useDataFreshness } from "../context/DataFreshness";
 
-const links = [
-  { to: "/", label: "Analytics" },
-  { to: "/imports", label: "Imports" },
-  { to: "/rules", label: "Rules" },
-  { to: "/settings", label: "Settings" },
-];
-
 export default function NavBar() {
   const { markStale } = useDataFreshness();
+  const { t } = useTranslation();
+
+  const links = [
+    { to: "/", label: t("nav.analytics") },
+    { to: "/imports", label: t("nav.imports") },
+    { to: "/rules", label: t("nav.rules") },
+    { to: "/settings", label: t("nav.settings") },
+  ];
 
   return (
     <nav className="flex items-center gap-1 px-6 py-3 border-b border-gray-200 bg-white">
