@@ -10,8 +10,8 @@ import { useDataFreshness } from "../../context/DataFreshness";
 
 type Level =
   | { view: "summary" }
-  | { view: "group"; groupName: string }
-  | { view: "category"; groupName: string; categoryId: string; categoryName: string };
+  | { view: "group"; groupName: string; groupSlug?: string }
+  | { view: "category"; groupName: string; groupSlug?: string; categoryId: string; categoryName: string; categorySlug?: string };
 
 export default function AnalyticsPage() {
   const { t } = useTranslation();
@@ -97,15 +97,16 @@ export default function AnalyticsPage() {
       {tab === "overview" && summary && level.view === "summary" && (
         <MonthSummary
           summary={summary}
-          onGroupClick={(groupName) => setLevel({ view: "group", groupName })}
+          onGroupClick={(groupName, groupSlug) => setLevel({ view: "group", groupName, groupSlug })}
         />
       )}
 
       {tab === "overview" && summary && level.view === "group" && (
         <GroupDetail
           group={summary.groups.find((g) => g.name === level.groupName)!}
-          onCategoryClick={(categoryId, categoryName) =>
-            setLevel({ view: "category", groupName: level.groupName, categoryId, categoryName })
+          groupSlug={level.view === "group" ? level.groupSlug : undefined}
+          onCategoryClick={(categoryId, categoryName, categorySlug) =>
+            setLevel({ view: "category", groupName: level.groupName, groupSlug: level.view === "group" ? level.groupSlug : undefined, categoryId, categoryName, categorySlug })
           }
           onBack={() => setLevel({ view: "summary" })}
         />
@@ -115,9 +116,10 @@ export default function AnalyticsPage() {
         <CategoryDetail
           categoryId={level.categoryId}
           categoryName={level.categoryName}
+          categorySlug={level.view === "category" ? level.categorySlug : undefined}
           year={year}
           month={month}
-          onBack={() => setLevel({ view: "group", groupName: level.groupName })}
+          onBack={() => setLevel({ view: "group", groupName: level.groupName, groupSlug: level.view === "category" ? level.groupSlug : undefined })}
         />
       )}
     </div>

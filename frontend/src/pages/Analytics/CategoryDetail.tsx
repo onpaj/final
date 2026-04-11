@@ -8,12 +8,13 @@ import client from "../../api/client";
 interface Props {
   categoryId: string;
   categoryName: string;
+  categorySlug?: string;
   year: number;
   month: number;
   onBack: () => void;
 }
 
-export default function CategoryDetail({ categoryId, categoryName, year, month, onBack }: Props) {
+export default function CategoryDetail({ categoryId, categoryName, categorySlug, year, month, onBack }: Props) {
   const { t } = useTranslation();
   const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
   const dateTo = `${year}-${String(month).padStart(2, "0")}-31`;
@@ -82,7 +83,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
           {t("analytics.exportCsv")}
         </a>
       </div>
-      <h2 className="text-xl font-bold mb-4">{categoryName}</h2>
+      <h2 className="text-xl font-bold mb-4">{t("cat." + (categorySlug ?? ""), { defaultValue: categoryName })}</h2>
 
       {selected.size > 0 && (
         <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">

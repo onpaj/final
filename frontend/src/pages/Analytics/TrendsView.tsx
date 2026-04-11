@@ -22,11 +22,13 @@ export default function TrendsView({ year, month }: Props) {
 
   const pivoted: Record<string, Record<string, number>> = {};
   const groups = new Set<string>();
+  const groupSlugMap: Record<string, string> = {};
   for (const p of points) {
     const key = `${p.year}-${String(p.month).padStart(2, "0")}`;
     pivoted[key] = pivoted[key] || {};
     pivoted[key][p.group] = (pivoted[key][p.group] || 0) + Math.abs(p.total);
     if (!p.is_income) groups.add(p.group);
+    if (p.group_slug) groupSlugMap[p.group] = p.group_slug;
   }
   const chartData = Object.entries(pivoted)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -43,7 +45,10 @@ export default function TrendsView({ year, month }: Props) {
           <XAxis dataKey="month" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v) => typeof v === "number" ? `${v.toLocaleString("cs-CZ")} CZK` : v} />
-          <Legend />
+          <Legend formatter={(value) => {
+            const slug = groupSlugMap[value as string];
+            return slug ? t("cat." + slug, { defaultValue: value as string }) : value as string;
+          }} />
           {groupList.map((g, i) => (
             <Line key={g} type="monotone" dataKey={g} stroke={COLORS[i % COLORS.length]} dot={false} />
           ))}
