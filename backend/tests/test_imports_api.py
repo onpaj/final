@@ -1,11 +1,11 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.db.models import Account, ImportBatch
+from app.db.models import Account, ImportBatch, Transaction
 from app.db.session import get_db
 from app.main import app
 
@@ -140,3 +140,53 @@ async def test_get_import_batch_returns_batch(client, mock_db):
     assert resp.status_code == 200
     assert resp.json()["id"] == str(batch.id)
     assert resp.json()["status"] == "processing"
+
+
+def _make_transaction(batch_id: uuid.UUID, categorization_source: str | None = "rule", is_transfer: bool = False) -> Transaction:
+    tx = MagicMock(spec=Transaction)
+    tx.id = uuid.uuid4()
+    tx.import_batch_id = batch_id
+    tx.booking_date = date(2026, 3, 15)
+    tx.amount = -500.0
+    tx.currency = "CZK"
+    tx.counterparty_name = "Lidl"
+    tx.description = None
+    tx.category_id = uuid.uuid4()
+    tx.categorization_source = categorization_source
+    tx.is_transfer = is_transfer
+    return tx
+
+
+@pytest.mark.anyio
+async def test_batch_transactions_returns_classification_fields(client, mock_db):
+    batch_id = uuid.uuid4()
+    tx = _make_transaction(batch_id, categorization_source="rule", is_transfer=False)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [tx]
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    async with client as c:
+        resp = await c.get(f"/api/imports/{batch_id}/transactions")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["categorization_source"] == "rule"
+    assert data[0]["is_transfer"] is False
+
+
+@pytest.mark.anyio
+async def test_batch_transactions_llm_and_transfer(client, mock_db):
+    batch_id = uuid.uuid4()
+    tx = _make_transaction(batch_id, categorization_source="llm", is_transfer=True)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [tx]
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    async with client as c:
+        resp = await c.get(f"/api/imports/{batch_id}/transactions")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]["categorization_source"] == "llm"
+    assert data[0]["is_transfer"] is True

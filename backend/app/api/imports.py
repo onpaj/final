@@ -42,6 +42,8 @@ class BatchTransactionOut(BaseModel):
     counterparty_name: str | None
     description: str | None
     category_id: uuid.UUID | None
+    categorization_source: str | None
+    is_transfer: bool
     model_config = {"from_attributes": False}
 
 
@@ -147,6 +149,8 @@ async def batch_transactions(batch_id: uuid.UUID, db: AsyncSession = Depends(get
             counterparty_name=tx.counterparty_name,
             description=tx.description,
             category_id=tx.category_id,
+            categorization_source=tx.categorization_source,
+            is_transfer=tx.is_transfer,
         )
         for tx in txs
     ]
