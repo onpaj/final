@@ -75,14 +75,19 @@ class AnthropicClient:
         counterparty: str | None,
         description: str | None,
         amount: Decimal,
-        categories: list[str],
+        categories: list[tuple[str, str | None]],
     ) -> ClassificationResult:
+        category_lines = "\n".join(
+            f"- {name}" + (f" ({hint})" if hint else "")
+            for name, hint in categories
+        )
         prompt = (
-            f"Classify this bank transaction into one of the categories listed below.\n\n"
+            f"Classify this bank transaction into one of the categories listed below.\n"
+            f"You MUST return the category name exactly as written in the list — do not modify, translate, or combine names.\n\n"
             f"Counterparty: {counterparty or 'unknown'}\n"
             f"Description: {description or 'none'}\n"
             f"Amount: {amount} CZK\n\n"
-            f"Available categories:\n" + "\n".join(f"- {c}" for c in categories)
+            f"Available categories:\n{category_lines}"
         )
         result = self._call(HAIKU, prompt)
         if result.confidence >= CONFIDENCE_THRESHOLD:
