@@ -120,7 +120,9 @@
     },
     "fieldCategory": "Kategorie",
     "fieldPriority": "Priorita",
-    "fieldEnabled": "Aktivní"
+    "fieldEnabled": "Aktivní",
+    "createFromTransaction": "Vytvořit pravidlo z transakce",
+    "matchTypePlaceholder": "— vyberte typ —"
   },
   "categories": {
     "title": "Kategorie",
@@ -132,7 +134,10 @@
     "selectGroup": "Vyberte skupinu pro správu kategorií.",
     "fieldName": "Název",
     "fieldColor": "Barva",
+    "fieldHint": "Nápověda pro AI (volitelné)",
+    "fieldHintPlaceholder": "např. obchody s potravinami, supermarkety",
     "fieldIsIncome": "Příjmová kategorie",
+    "fieldIsIgnored": "Ignorovat v analýzách",
     "income": "Příjem",
     "clearAll": "Vymazat všechny kategorie",
     "clearAllConfirm": "Tato akce smaže všechny ne-systémové kategorie a odpojí všechny transakce. Jste si jistí?",

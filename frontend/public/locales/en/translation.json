@@ -120,7 +120,9 @@
     },
     "fieldCategory": "Category",
     "fieldPriority": "Priority",
-    "fieldEnabled": "Enabled"
+    "fieldEnabled": "Enabled",
+    "createFromTransaction": "Create rule from transaction",
+    "matchTypePlaceholder": "— select type —"
   },
   "categories": {
     "title": "Categories",
@@ -132,7 +134,10 @@
     "selectGroup": "Select a group to manage its categories.",
     "fieldName": "Name",
     "fieldColor": "Color",
+    "fieldHint": "AI hint (optional)",
+    "fieldHintPlaceholder": "e.g. grocery stores, supermarkets",
     "fieldIsIncome": "Income category",
+    "fieldIsIgnored": "Ignore in analytics",
     "income": "Income",
     "clearAll": "Clear all categories",
     "clearAllConfirm": "This will delete all non-system categories and unlink all transactions. Are you sure?",
