@@ -3,6 +3,7 @@
     "analytics": "Analytics",
     "imports": "Imports",
     "rules": "Rules",
+    "categories": "Categories",
     "settings": "Settings"
   },
   "common": {
@@ -114,6 +115,18 @@
     "fieldCategory": "Category",
     "fieldPriority": "Priority",
     "fieldEnabled": "Enabled"
+  },
+  "categories": {
+    "title": "Categories",
+    "groupsTitle": "Groups",
+    "categoriesTitle": "Categories",
+    "newGroup": "New Group",
+    "newCategory": "New Category",
+    "editCategory": "Edit Category",
+    "selectGroup": "Select a group to manage its categories.",
+    "fieldName": "Name",
+    "fieldColor": "Color",
+    "fieldIsIncome": "Income category"
   },
   "settings": {
     "title": "Settings",

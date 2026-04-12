@@ -5,6 +5,7 @@ import AnalyticsPage from "./pages/Analytics";
 import ImportsPage from "./pages/Imports";
 import RulesPage from "./pages/Rules";
 import SettingsPage from "./pages/Settings";
+import CategoriesPage from "./pages/Categories";
 import { DataFreshnessProvider } from "./context/DataFreshness";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ export default function App() {
                 <Route path="/" element={<AnalyticsPage />} />
                 <Route path="/imports" element={<ImportsPage />} />
                 <Route path="/rules" element={<RulesPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </main>

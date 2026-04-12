@@ -3,6 +3,7 @@
     "analytics": "Analýzy",
     "imports": "Importy",
     "rules": "Pravidla",
+    "categories": "Kategorie",
     "settings": "Nastavení"
   },
   "common": {
@@ -114,6 +115,18 @@
     "fieldCategory": "Kategorie",
     "fieldPriority": "Priorita",
     "fieldEnabled": "Aktivní"
+  },
+  "categories": {
+    "title": "Kategorie",
+    "groupsTitle": "Skupiny",
+    "categoriesTitle": "Kategorie",
+    "newGroup": "Nová skupina",
+    "newCategory": "Nová kategorie",
+    "editCategory": "Upravit kategorii",
+    "selectGroup": "Vyberte skupinu pro správu kategorií.",
+    "fieldName": "Název",
+    "fieldColor": "Barva",
+    "fieldIsIncome": "Příjmová kategorie"
   },
   "settings": {
     "title": "Nastavení",
