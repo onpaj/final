@@ -33,11 +33,11 @@ class CategorizationService:
             for r in rules
         ]
 
-    async def _load_category_names(self) -> list[str]:
-        result = await self._db.execute(select(Category.name))
-        return [row[0] for row in result.all()]
+    async def _load_categories(self) -> list[tuple[str, str | None]]:
+        result = await self._db.execute(select(Category.name, Category.hint))
+        return [(row[0], row[1]) for row in result.all()]
 
-    async def _categorize_one(self, tx: Transaction, rules: list[dict], categories: list[str]) -> None:
+    async def _categorize_one(self, tx: Transaction, rules: list[dict], categories: list[tuple[str, str | None]]) -> None:
         row = TransactionRow(
             booking_date=tx.booking_date,
             value_date=tx.value_date,
@@ -70,7 +70,18 @@ class CategorizationService:
                 categories=categories,
             )
         except AnthropicClassificationError:
-            # Leave uncategorized for manual review
+            # Log error so Review page can distinguish from "never tried"
+            error_log = LlmClassification(
+                transaction_id=tx.id,
+                model="unknown",
+                suggested_category_id=None,
+                accepted=False,
+                confidence=None,
+                reasoning="error",
+                prompt_tokens=None,
+                completion_tokens=None,
+            )
+            self._db.add(error_log)
             return
 
         cat_result = await self._db.execute(
@@ -102,7 +113,7 @@ class CategorizationService:
         )
         transactions = result.scalars().all()
         rules = await self._load_rules()
-        categories = await self._load_category_names()
+        categories = await self._load_categories()
 
         categorized = 0
         needs_review = 0
