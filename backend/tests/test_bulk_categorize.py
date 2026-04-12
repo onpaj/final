@@ -63,3 +63,32 @@ async def test_bulk_categorize_missing_category_id_rejected(client, mock_db):
 
     assert resp.status_code == 422
     assert not mock_db.commit.called
+
+
+async def test_bulk_unclassify_happy_path(client, mock_db):
+    mock_result = MagicMock()
+    mock_db.execute.return_value = mock_result
+
+    transaction_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
+
+    resp = await client.patch(
+        "/api/transactions/bulk-categorize",
+        json={"transaction_ids": transaction_ids, "category_id": None},
+    )
+
+    assert resp.status_code == 204
+    assert mock_db.execute.called
+    assert mock_db.commit.called
+
+
+async def test_bulk_unclassify_omitting_category_id_still_rejected(client, mock_db):
+    """category_id must be explicitly present (even if null); omitting it is a 422."""
+    transaction_ids = [str(uuid.uuid4())]
+
+    resp = await client.patch(
+        "/api/transactions/bulk-categorize",
+        json={"transaction_ids": transaction_ids},
+    )
+
+    assert resp.status_code == 422
+    assert not mock_db.commit.called

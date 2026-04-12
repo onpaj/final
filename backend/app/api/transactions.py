@@ -114,18 +114,26 @@ async def list_transactions(
 
 class BulkCategorizeRequest(BaseModel):
     transaction_ids: Annotated[list[uuid.UUID], Field(min_length=1)]
-    category_id: uuid.UUID
+    category_id: uuid.UUID | None
 
 
 @router.patch("/bulk-categorize", status_code=204)
 async def bulk_categorize(body: BulkCategorizeRequest, db: AsyncSession = Depends(get_db)):
-    await db.execute(
-        Transaction.__table__.update()
-        .where(Transaction.id.in_(body.transaction_ids))
-        .values(
+    if body.category_id is not None:
+        values = dict(
             category_id=body.category_id,
             categorization_source="manual",
             confidence=None,
         )
+    else:
+        values = dict(
+            category_id=None,
+            categorization_source=None,
+            confidence=None,
+        )
+    await db.execute(
+        Transaction.__table__.update()
+        .where(Transaction.id.in_(body.transaction_ids))
+        .values(**values)
     )
     await db.commit()
