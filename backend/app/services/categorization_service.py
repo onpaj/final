@@ -85,9 +85,9 @@ class CategorizationService:
             return
 
         cat_result = await self._db.execute(
-            select(Category).where(Category.name == result.category_name)
+            select(Category).where(Category.name == result.category_name).limit(1)
         )
-        category = cat_result.scalar_one_or_none()
+        category = cat_result.scalars().first()
 
         accepted = result.confidence >= CONFIDENCE_THRESHOLD and category is not None
         log = LlmClassification(
@@ -106,6 +106,27 @@ class CategorizationService:
             tx.category_id = category.id
             tx.categorization_source = "llm"
             tx.confidence = result.confidence
+
+    async def _categorize_one_rules_only(self, tx: Transaction, rules: list[dict]) -> None:
+        row = TransactionRow(
+            booking_date=tx.booking_date,
+            value_date=tx.value_date,
+            amount=tx.amount,
+            currency=tx.currency,
+            counterparty_name=tx.counterparty_name,
+            counterparty_account=tx.counterparty_account,
+            description=tx.description,
+            raw_reference=tx.raw_reference,
+        )
+        match = RulesEngine.apply(row, rules)
+        if match:
+            tx.category_id = match.category_id
+            tx.categorization_source = "rule"
+            tx.confidence = Decimal("1.0")
+            rule_obj = await self._db.get(Rule, match.rule_id)
+            if rule_obj:
+                rule_obj.hit_count += 1
+                rule_obj.last_hit_at = datetime.now(timezone.utc)
 
     async def run_batch(self, transaction_ids: list) -> dict:
         result = await self._db.execute(

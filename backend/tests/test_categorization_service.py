@@ -70,3 +70,63 @@ async def test_llm_error_writes_classification_row():
     assert row.accepted is False
     assert row.reasoning == "error"
     assert row.confidence is None
+
+
+async def test_rules_only_categorizes_on_match():
+    """_categorize_one_rules_only sets category when a rule matches."""
+    groceries_id = uuid.uuid4()
+    rule = {
+        "id": uuid.uuid4(),
+        "match_type": "counterparty_contains",
+        "match_value": {"value": "ALBERT"},
+        "category_id": groceries_id,
+        "priority": 100,
+        "enabled": True,
+    }
+    tx = MagicMock()
+    tx.counterparty_name = "ALBERT SUPERMARKET"
+    tx.description = ""
+    tx.amount = Decimal("-250.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_db = AsyncMock()
+    mock_rule_obj = MagicMock()
+    mock_rule_obj.hit_count = 0
+    mock_db.get = AsyncMock(return_value=mock_rule_obj)
+
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+        service = CategorizationService(mock_db)
+        await service._categorize_one_rules_only(tx, [rule])
+        MockLLM.return_value.classify.assert_not_called()
+
+    assert tx.category_id == groceries_id
+    assert tx.categorization_source == "rule"
+    assert tx.confidence == Decimal("1.0")
+
+
+async def test_rules_only_leaves_uncategorized_when_no_match():
+    """_categorize_one_rules_only does nothing when no rule matches."""
+    tx = MagicMock()
+    tx.counterparty_name = "UNKNOWN SHOP"
+    tx.description = ""
+    tx.amount = Decimal("-100.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_db = AsyncMock()
+
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+        service = CategorizationService(mock_db)
+        await service._categorize_one_rules_only(tx, [])
+        MockLLM.return_value.classify.assert_not_called()
+
+    assert tx.category_id is None
