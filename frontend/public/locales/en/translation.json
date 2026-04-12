@@ -91,7 +91,8 @@
     "historyColAccount": "Account",
     "historyColRows": "Rows",
     "historyColImported": "Imported",
-    "historyColDuplicates": "Duplicates"
+    "historyColDuplicates": "Duplicates",
+    "colClassification": "Classification"
   },
   "rules": {
     "title": "Categorization Rules",

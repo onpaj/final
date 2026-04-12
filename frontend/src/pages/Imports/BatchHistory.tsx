@@ -11,9 +11,53 @@ const STATUS_BADGE: Record<Batch["status"], string> = {
   failed: "bg-red-100 text-red-800",
 };
 
+interface BatchTx {
+  id: string;
+  booking_date: string;
+  amount: number;
+  currency: string;
+  counterparty_name: string | null;
+  description: string | null;
+  category_id: string | null;
+  categorization_source: string | null;
+  is_transfer: boolean;
+}
+
+function CategorizationBadge({ tx }: { tx: BatchTx }) {
+  if (tx.is_transfer) {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+        transfer
+      </span>
+    );
+  }
+  if (tx.categorization_source === "rule") {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+        rule
+      </span>
+    );
+  }
+  if (tx.categorization_source === "llm") {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+        llm
+      </span>
+    );
+  }
+  if (tx.categorization_source === "manual") {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+        manual
+      </span>
+    );
+  }
+  return <span className="text-gray-400 text-xs">—</span>;
+}
+
 function BatchTransactions({ batchId }: { batchId: string }) {
   const { t } = useTranslation();
-  const { data: txs = [], isLoading } = useQuery({
+  const { data: txs = [], isLoading } = useQuery<BatchTx[]>({
     queryKey: ["batch-transactions", batchId],
     queryFn: async () => (await client.get(`/api/imports/${batchId}/transactions`)).data,
   });
@@ -29,10 +73,11 @@ function BatchTransactions({ batchId }: { batchId: string }) {
           <th className="pr-4 py-1 text-left">{t("analytics.txCounterparty")}</th>
           <th className="pr-4 py-1 text-right">{t("analytics.txAmount")}</th>
           <th className="pr-4 py-1 text-left">{t("common.currency")}</th>
+          <th className="pr-4 py-1 text-left">{t("imports.colClassification")}</th>
         </tr>
       </thead>
       <tbody>
-        {txs.map((tx: any) => (
+        {txs.map((tx) => (
           <tr key={tx.id} className="border-t border-gray-100">
             <td className="pr-4 py-1 text-gray-500">{tx.booking_date}</td>
             <td className="pr-4 py-1">{tx.counterparty_name || "—"}</td>
@@ -40,6 +85,7 @@ function BatchTransactions({ batchId }: { batchId: string }) {
               {tx.amount.toLocaleString("cs-CZ")}
             </td>
             <td className="pr-4 py-1 text-gray-400">{tx.currency}</td>
+            <td className="pr-4 py-1"><CategorizationBadge tx={tx} /></td>
           </tr>
         ))}
       </tbody>
