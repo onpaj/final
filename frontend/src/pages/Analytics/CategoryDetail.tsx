@@ -38,7 +38,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     queryFn: listCategoryGroups,
   });
 
-  const allCategories = categoryGroups.flatMap((g: any) => g.categories ?? []);
+  const allCategories = categoryGroups.flatMap((g) => g.categories ?? []);
 
   function invalidateAndClear() {
     setSelected(new Set());
@@ -117,7 +117,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
             onChange={(e) => setAssignTarget(e.target.value)}
           >
             <option value="">{t("analytics.pickCategory")}</option>
-            {allCategories.map((c: any) => (
+            {allCategories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
