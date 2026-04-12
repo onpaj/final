@@ -125,7 +125,71 @@ pytest
 
 ### Building for Production
 
-Not yet implemented. See [`docs/roadmap.md`](docs/roadmap.md) for post-M5 milestones.
+A multi-stage Docker image builds the frontend and serves it alongside the API:
+
+```bash
+docker build -t final-app .
+docker run -p 8000:8000 \
+  -e DATABASE_URL=postgresql+asyncpg://... \
+  -e ANTHROPIC_API_KEY=sk-ant-... \
+  -e ENVIRONMENT=production \
+  final-app
+```
+
+App available at `http://localhost:8000`.
+
+### CI/CD — GitHub Actions
+
+The workflow in `.github/workflows/deploy.yml` runs on every push to `main`:
+1. Runs backend tests against a real Postgres container
+2. Type-checks and builds the frontend
+3. Builds and pushes a Docker image to Docker Hub
+4. Deploys the image to Azure Container Web App
+
+#### Required GitHub Secrets
+
+Add these under **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | How to get it |
+|--------|---------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub → Account Settings → Personal access tokens → Generate new token |
+| `AZURE_WEBAPP_NAME` | The name of your Azure Web App resource (e.g. `my-final-app`) |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | Azure Portal → Web App → **Get publish profile** → paste the entire XML file content |
+
+#### Azure App Service — Application Settings
+
+In Azure Portal → Web App → **Configuration → Application settings**, add:
+
+| Setting | Value |
+|---------|-------|
+| `DATABASE_URL` | `postgresql+asyncpg://user:pass@host/db` (from Neon) |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| `ENVIRONMENT` | `production` |
+| `AZURE_STORAGE_CONNECTION_STRING` | Storage account connection string (from Azure Portal → Storage account → Access keys) |
+| `AZURE_STORAGE_CONTAINER` | `uploads` |
+| `WEBSITES_PORT` | `8000` |
+
+#### Azure Blob Storage — one-time setup
+
+Create a storage account and container for uploaded CSVs:
+
+```bash
+az storage account create -n <storage-name> -g <resource-group> --sku Standard_LRS
+az storage container create -n uploads --account-name <storage-name>
+```
+
+#### Entra ID Authentication (Easy Auth)
+
+1. **Register an App** in [Azure Portal → Entra ID → App Registrations](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps):
+   - Redirect URI: `https://<webapp-name>.azurewebsites.net/.auth/login/aad/callback`
+   - Supported account types: *Accounts in this organizational directory only* (single tenant)
+2. **Enable Authentication** on the Web App:
+   - Azure Portal → Web App → **Authentication → Add identity provider**
+   - Choose **Microsoft**, paste in the **Application (client) ID** from step 1
+   - Set unauthenticated requests to **HTTP 302 Redirect to login page**
+
+No code changes are needed — authentication is enforced at the Azure infrastructure level.
 
 ## License
 
