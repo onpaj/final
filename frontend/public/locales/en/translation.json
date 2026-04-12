@@ -56,7 +56,10 @@
     "movingTransactions": "Moving {{count}} transaction(s)",
     "currentCategory": "Current category",
     "trendsTitle": "Spending Trends (6 months)",
-    "loadingTrends": "Loading trends…"
+    "loadingTrends": "Loading trends…",
+    "clearCategory": "Clear category",
+    "clearingCategory": "Clearing…",
+    "clearFailed": "Failed to clear. Please try again."
   },
   "imports": {
     "title": "Imports",
@@ -130,7 +133,14 @@
     "fieldName": "Name",
     "fieldColor": "Color",
     "fieldIsIncome": "Income category",
-    "income": "Income"
+    "income": "Income",
+    "clearAll": "Clear all categories",
+    "clearAllConfirm": "This will delete all non-system categories and unlink all transactions. Are you sure?",
+    "deleteCategory": "Delete Category",
+    "deleteCategoryHint": "transactions using this category will be reassigned.",
+    "reassignTo": "Reassign transactions to",
+    "reassignNone": "Leave uncategorized",
+    "confirmDelete": "Delete"
   },
   "settings": {
     "title": "Settings",
@@ -157,6 +167,12 @@
     "llmColCalls": "Calls",
     "llmColTokensIn": "Tokens In",
     "llmColTokensOut": "Tokens Out",
-    "llmColCost": "Est. Cost"
+    "llmColCost": "Est. Cost",
+    "categorizationTitle": "Categorization",
+    "categorizationDesc": "Run LLM classification on all transactions without a category.",
+    "reclassifyBtn": "Re-classify unclassified",
+    "reclassifyRunning": "Running…",
+    "reclassifyDone": "Done — {{categorized}} categorized, {{needs_review}} need review",
+    "reclassifyFailed": "Classification failed. Please try again."
   }
 }

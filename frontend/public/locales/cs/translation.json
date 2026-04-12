@@ -56,7 +56,10 @@
     "movingTransactions": "Přesouvám {{count}} transakcí",
     "currentCategory": "Aktuální kategorie",
     "trendsTitle": "Trendy výdajů (6 měsíců)",
-    "loadingTrends": "Načítání trendů…"
+    "loadingTrends": "Načítání trendů…",
+    "clearCategory": "Zrušit kategorii",
+    "clearingCategory": "Mazání…",
+    "clearFailed": "Zrušení selhalo. Zkuste to znovu."
   },
   "imports": {
     "title": "Importy",
@@ -130,7 +133,14 @@
     "fieldName": "Název",
     "fieldColor": "Barva",
     "fieldIsIncome": "Příjmová kategorie",
-    "income": "Příjem"
+    "income": "Příjem",
+    "clearAll": "Vymazat všechny kategorie",
+    "clearAllConfirm": "Tato akce smaže všechny ne-systémové kategorie a odpojí všechny transakce. Jste si jistí?",
+    "deleteCategory": "Smazat kategorii",
+    "deleteCategoryHint": "transakce s touto kategorií budou přeřazeny.",
+    "reassignTo": "Přeřadit transakce do",
+    "reassignNone": "Ponechat bez kategorie",
+    "confirmDelete": "Smazat"
   },
   "settings": {
     "title": "Nastavení",
@@ -157,6 +167,12 @@
     "llmColCalls": "Volání",
     "llmColTokensIn": "Tokeny vstup",
     "llmColTokensOut": "Tokeny výstup",
-    "llmColCost": "Odh. náklady"
+    "llmColCost": "Odh. náklady",
+    "categorizationTitle": "Kategorizace",
+    "categorizationDesc": "Spustit LLM klasifikaci na všech transakcích bez kategorie.",
+    "reclassifyBtn": "Překlasifikovat nekategorizované",
+    "reclassifyRunning": "Probíhá…",
+    "reclassifyDone": "Hotovo — {{categorized}} kategorizováno, {{needs_review}} ke kontrole",
+    "reclassifyFailed": "Klasifikace selhala. Zkuste to znovu."
   }
 }
