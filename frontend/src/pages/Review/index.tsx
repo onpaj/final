@@ -17,7 +17,7 @@ export default function ReviewPage() {
   const [overId, setOverId] = useState<string | null>(null);
 
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["transactions", "needs_review"],
+    queryKey: ["transactions", "needs_review", { include_llm_status: true }],
     queryFn: () => listTransactions({ needs_review: true, include_llm_status: true, limit: 500 }),
   });
 
