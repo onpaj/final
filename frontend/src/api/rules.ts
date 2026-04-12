@@ -23,6 +23,14 @@ export async function createRule(
   return data;
 }
 
+export async function updateRule(
+  id: string,
+  body: Partial<Omit<Rule, "id" | "hit_count">>
+): Promise<Rule> {
+  const { data } = await client.patch<Rule>(`/api/rules/${id}`, body);
+  return data;
+}
+
 export async function deleteRule(id: string): Promise<void> {
   await client.delete(`/api/rules/${id}`);
 }
