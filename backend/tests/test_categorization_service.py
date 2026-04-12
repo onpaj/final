@@ -165,3 +165,78 @@ async def test_rules_only_handles_deleted_rule_gracefully():
     # Transaction is still categorized — missing rule object doesn't block categorization
     assert tx.category_id == groceries_id
     assert tx.categorization_source == "rule"
+
+
+async def test_llm_only_skips_rules_and_categorizes():
+    """_categorize_one_llm_only calls LLM and sets category when confidence is high."""
+    from app.services.anthropic_client import CONFIDENCE_THRESHOLD
+
+    groceries_id = uuid.uuid4()
+
+    tx = MagicMock()
+    tx.id = uuid.uuid4()
+    tx.counterparty_name = "ALBERT SUPERMARKET"
+    tx.description = ""
+    tx.amount = Decimal("-250.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_category = MagicMock()
+    mock_category.id = groceries_id
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(
+        return_value=MagicMock(scalar_one_or_none=lambda: mock_category)
+    )
+    added_rows = []
+    mock_db.add = MagicMock(side_effect=added_rows.append)
+
+    llm_result = MagicMock()
+    llm_result.category_name = "Groceries"
+    llm_result.confidence = CONFIDENCE_THRESHOLD  # exactly at threshold = accepted
+    llm_result.reasoning = "supermarket"
+    llm_result.model = "claude-haiku-4-5"
+    llm_result.prompt_tokens = 100
+    llm_result.completion_tokens = 50
+
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+        MockLLM.return_value.classify.return_value = llm_result
+        service = CategorizationService(mock_db)
+        await service._categorize_one_llm_only(tx, [("Groceries", None)])
+
+    assert tx.category_id == groceries_id
+    assert tx.categorization_source == "llm"
+    assert len(added_rows) == 1  # LlmClassification log written
+
+
+async def test_llm_only_error_writes_classification_row():
+    """_categorize_one_llm_only on LLM error writes error log, leaves uncategorized."""
+    tx = MagicMock()
+    tx.id = uuid.uuid4()
+    tx.counterparty_name = "UNKNOWN"
+    tx.description = ""
+    tx.amount = Decimal("-100.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_db = AsyncMock()
+    added_rows = []
+    mock_db.add = MagicMock(side_effect=added_rows.append)
+
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+        MockLLM.return_value.classify.side_effect = AnthropicClassificationError("timeout")
+        service = CategorizationService(mock_db)
+        await service._categorize_one_llm_only(tx, [("Groceries", None)])
+
+    assert tx.category_id is None
+    assert len(added_rows) == 1
+    assert added_rows[0].reasoning == "error"
+    assert added_rows[0].accepted is False
