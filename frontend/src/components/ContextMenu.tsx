@@ -44,6 +44,12 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
     };
   }, [onClose]);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   function openSubmenu(label: string, itemEl: HTMLElement) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     const rect = itemEl.getBoundingClientRect();
