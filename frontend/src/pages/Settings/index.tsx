@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { createAccount, deleteAccount, listAccounts } from "../../api/accounts";
 import client from "../../api/client";
+import { runBatchClassification, type BatchClassificationResult } from "../../api/categorization";
 
 function LlmCostSection() {
   const { t } = useTranslation();
@@ -51,6 +52,41 @@ function LlmCostSection() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function CategorizationSection() {
+  const { t } = useTranslation();
+  const [result, setResult] = useState<BatchClassificationResult | null>(null);
+
+  const classify = useMutation({
+    mutationFn: runBatchClassification,
+    onMutate: () => setResult(null),
+    onSuccess: (data) => setResult(data),
+  });
+
+  return (
+    <section className="bg-white border border-gray-200 rounded-lg overflow-hidden mt-6">
+      <h2 className="text-lg font-semibold px-6 py-4 border-b">{t("settings.categorizationTitle")}</h2>
+      <div className="px-6 py-4">
+        <p className="text-sm text-gray-500 mb-4">{t("settings.categorizationDesc")}</p>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+          disabled={classify.isPending}
+          onClick={() => classify.mutate()}
+        >
+          {classify.isPending ? t("settings.reclassifyRunning") : t("settings.reclassifyBtn")}
+        </button>
+        {result && (
+          <p className="mt-3 text-sm text-green-700">
+            {t("settings.reclassifyDone", { categorized: result.categorized, needs_review: result.needs_review })}
+          </p>
+        )}
+        {classify.isError && (
+          <p className="mt-3 text-sm text-red-500">{t("settings.reclassifyFailed")}</p>
         )}
       </div>
     </section>
@@ -186,6 +222,7 @@ export default function SettingsPage() {
       </section>
 
       <LlmCostSection />
+      <CategorizationSection />
     </div>
   );
 }
