@@ -132,3 +132,36 @@ async def test_rules_only_leaves_uncategorized_when_no_match():
         MockLLM.return_value.classify.assert_not_called()
 
     assert tx.category_id is None
+
+
+async def test_rules_only_handles_deleted_rule_gracefully():
+    """_categorize_one_rules_only still categorizes even if the rule no longer exists in DB."""
+    groceries_id = uuid.uuid4()
+    rule = {
+        "id": uuid.uuid4(),
+        "match_type": "counterparty_contains",
+        "match_value": {"value": "ALBERT"},
+        "category_id": groceries_id,
+        "priority": 100,
+        "enabled": True,
+    }
+    tx = MagicMock()
+    tx.counterparty_name = "ALBERT SUPERMARKET"
+    tx.description = ""
+    tx.amount = Decimal("-250.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_db = AsyncMock()
+    mock_db.get = AsyncMock(return_value=None)  # rule deleted from DB
+
+    service = CategorizationService(mock_db)
+    await service._categorize_one_rules_only(tx, [rule])
+
+    # Transaction is still categorized — missing rule object doesn't block categorization
+    assert tx.category_id == groceries_id
+    assert tx.categorization_source == "rule"
