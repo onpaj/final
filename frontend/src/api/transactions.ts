@@ -25,3 +25,13 @@ export async function listTransactions(params: {
   const { data } = await client.get<Transaction[]>("/api/transactions", { params });
   return data;
 }
+
+export async function bulkCategorize(
+  transaction_ids: string[],
+  category_id: string | null,
+): Promise<void> {
+  await client.patch("/api/transactions/bulk-categorize", {
+    transaction_ids,
+    category_id,
+  });
+}
