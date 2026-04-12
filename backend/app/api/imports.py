@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -42,7 +43,7 @@ class BatchTransactionOut(BaseModel):
     counterparty_name: str | None
     description: str | None
     category_id: uuid.UUID | None
-    categorization_source: str | None
+    categorization_source: Literal["rule", "llm", "manual"] | None
     is_transfer: bool
     model_config = {"from_attributes": False}
 
