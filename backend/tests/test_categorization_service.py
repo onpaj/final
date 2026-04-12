@@ -107,6 +107,8 @@ async def test_rules_only_categorizes_on_match():
     assert tx.category_id == groceries_id
     assert tx.categorization_source == "rule"
     assert tx.confidence == Decimal("1.0")
+    assert mock_rule_obj.hit_count == 1
+    assert mock_rule_obj.last_hit_at is not None
 
 
 async def test_rules_only_leaves_uncategorized_when_no_match():
