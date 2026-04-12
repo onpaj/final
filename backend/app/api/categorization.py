@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -10,7 +11,8 @@ from app.services.categorization_service import CategorizationService
 router = APIRouter()
 
 class RecategorizeRequest(BaseModel):
-    transaction_ids: list[uuid.UUID] | None = None  # None = all uncategorized
+    transaction_ids: list[uuid.UUID] | None = None
+    mode: Literal["rules", "llm", "full"] = "full"
 
 class RecategorizeResult(BaseModel):
     categorized: int
@@ -26,4 +28,4 @@ async def recategorize_batch(body: RecategorizeRequest, db: AsyncSession = Depen
         )
         ids = [r[0] for r in result.all()]
     service = CategorizationService(db)
-    return await service.run_batch(ids)
+    return await service.run_batch(ids, mode=body.mode)
