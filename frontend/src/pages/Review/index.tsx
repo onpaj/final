@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
 import { listTransactions, bulkCategorize } from "../../api/transactions";
 import { listCategoryGroups } from "../../api/categories";
+import { recategorizeBatch } from "../../api/categorization";
 import TransactionTable from "../Analytics/TransactionTable";
 import CategorySidebar from "../Analytics/CategorySidebar";
 import TransactionDragOverlay from "../Analytics/TransactionDragOverlay";
@@ -15,6 +16,7 @@ export default function ReviewPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions", "needs_review", { include_llm_status: true }],
@@ -28,6 +30,7 @@ export default function ReviewPage() {
 
   function invalidateAndClear() {
     setSelected(new Set());
+    setActionError(null);
     queryClient.invalidateQueries({ queryKey: ["transactions", "needs_review"] });
   }
 
@@ -40,6 +43,20 @@ export default function ReviewPage() {
       setOverId(null);
     },
   });
+
+  const runRulesMutation = useMutation({
+    mutationFn: () => recategorizeBatch(Array.from(selected), "rules"),
+    onSuccess: invalidateAndClear,
+    onError: () => setActionError(t("review.runError")),
+  });
+
+  const runLlmMutation = useMutation({
+    mutationFn: () => recategorizeBatch(Array.from(selected), "llm"),
+    onSuccess: invalidateAndClear,
+    onError: () => setActionError(t("review.runError")),
+  });
+
+  const isActing = runRulesMutation.isPending || runLlmMutation.isPending;
 
   function toggleRow(id: string) {
     setSelected((prev) => {
@@ -85,6 +102,45 @@ export default function ReviewPage() {
           </span>
         )}
       </div>
+
+      {selected.size > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => runRulesMutation.mutate()}
+              disabled={isActing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {runRulesMutation.isPending && (
+                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              )}
+              {t("review.runRules")}
+            </button>
+            <button
+              onClick={() => runLlmMutation.mutate()}
+              disabled={isActing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {runLlmMutation.isPending && (
+                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              )}
+              {t("review.runLlm")}
+            </button>
+            <span className="text-sm text-gray-500">
+              {t("review.selectedCount", { count: selected.size })}
+            </span>
+          </div>
+          {actionError && (
+            <p className="mt-1 text-sm text-red-600">{actionError}</p>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-gray-400 text-sm">{t("common.loading")}</p>
