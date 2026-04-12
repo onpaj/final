@@ -52,6 +52,9 @@
     "txDescription": "Description",
     "txAmount": "Amount",
     "noTransactions": "No transactions.",
+    "dropToReassign": "Drop here to reassign",
+    "movingTransactions": "Moving {{count}} transaction(s)",
+    "currentCategory": "Current category",
     "trendsTitle": "Spending Trends (6 months)",
     "loadingTrends": "Loading trends…"
   },

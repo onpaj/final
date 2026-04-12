@@ -52,6 +52,9 @@
     "txDescription": "Popis",
     "txAmount": "Částka",
     "noTransactions": "Žádné transakce.",
+    "dropToReassign": "Přetáhněte sem pro přeřazení",
+    "movingTransactions": "Přesouvám {{count}} transakcí",
+    "currentCategory": "Aktuální kategorie",
     "trendsTitle": "Trendy výdajů (6 měsíců)",
     "loadingTrends": "Načítání trendů…"
   },
