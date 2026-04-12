@@ -60,7 +60,8 @@
     "loadingTrends": "Loading trends…",
     "clearCategory": "Clear category",
     "clearingCategory": "Clearing…",
-    "clearFailed": "Failed to clear. Please try again."
+    "clearFailed": "Failed to clear. Please try again.",
+    "changeCategory": "Change category"
   },
   "imports": {
     "title": "Imports",

@@ -60,7 +60,8 @@
     "loadingTrends": "Načítání trendů…",
     "clearCategory": "Zrušit kategorii",
     "clearingCategory": "Mazání…",
-    "clearFailed": "Zrušení selhalo. Zkuste to znovu."
+    "clearFailed": "Zrušení selhalo. Zkuste to znovu.",
+    "changeCategory": "Změnit kategorii"
   },
   "imports": {
     "title": "Importy",
