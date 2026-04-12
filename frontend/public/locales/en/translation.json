@@ -186,6 +186,9 @@
     "title": "Needs Review",
     "empty": "All transactions are categorized.",
     "colReason": "Reason",
-    "countBadge": "{{count}}"
+    "countBadge": "{{count}}",
+    "reasonNoRule": "no rule",
+    "reasonLlmError": "LLM error",
+    "reasonLlmRejected": "LLM rejected"
   }
 }

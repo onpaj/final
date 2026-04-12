@@ -3,19 +3,20 @@ import { useTranslation } from "react-i18next";
 import type { Transaction } from "../../api/transactions";
 
 function ReasonBadge({ tx }: { tx: Transaction }) {
+  const { t } = useTranslation();
   if (!tx.llm_status) return null;
 
   if (tx.llm_status === "no_rule_no_llm") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-500">
-        no rule
+        {t("review.reasonNoRule")}
       </span>
     );
   }
   if (tx.llm_status === "llm_error") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs bg-red-100 text-red-600">
-        LLM error
+        {t("review.reasonLlmError")}
       </span>
     );
   }
@@ -23,7 +24,7 @@ function ReasonBadge({ tx }: { tx: Transaction }) {
   const conf = tx.llm_confidence != null ? ` (${Number(tx.llm_confidence).toFixed(2)})` : "";
   return (
     <span className="inline-block px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">
-      LLM rejected{conf}
+      {t("review.reasonLlmRejected")}{conf}
     </span>
   );
 }

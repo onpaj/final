@@ -186,6 +186,9 @@
     "title": "Ke kontrole",
     "empty": "Všechny transakce mají kategorii.",
     "colReason": "Důvod",
-    "countBadge": "{{count}}"
+    "countBadge": "{{count}}",
+    "reasonNoRule": "bez pravidla",
+    "reasonLlmError": "chyba LLM",
+    "reasonLlmRejected": "LLM zamítlo"
   }
 }

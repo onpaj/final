@@ -35,6 +35,10 @@ export default function ReviewPage() {
     mutationFn: (category_id: string) =>
       bulkCategorize(Array.from(selected), category_id),
     onSuccess: invalidateAndClear,
+    onError: () => {
+      setActiveId(null);
+      setOverId(null);
+    },
   });
 
   function toggleRow(id: string) {
