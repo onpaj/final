@@ -194,6 +194,10 @@
     "countBadge": "{{count}}",
     "reasonNoRule": "bez pravidla",
     "reasonLlmError": "chyba LLM",
-    "reasonLlmRejected": "LLM zamítlo"
+    "reasonLlmRejected": "LLM zamítlo",
+    "runRules": "Spustit pravidla",
+    "runLlm": "Klasifikovat LLM",
+    "selectedCount": "{{count}} vybráno",
+    "runError": "Akce selhala"
   }
 }

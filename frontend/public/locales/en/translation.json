@@ -194,6 +194,10 @@
     "countBadge": "{{count}}",
     "reasonNoRule": "no rule",
     "reasonLlmError": "LLM error",
-    "reasonLlmRejected": "LLM rejected"
+    "reasonLlmRejected": "LLM rejected",
+    "runRules": "Run rules",
+    "runLlm": "Classify with LLM",
+    "selectedCount": "{{count}} selected",
+    "runError": "Action failed"
   }
 }
