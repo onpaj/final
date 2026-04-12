@@ -64,7 +64,9 @@ class CategorizationService:
                 rule_obj.last_hit_at = datetime.now(timezone.utc)
             return
 
-        # LLM fallback
+        await self._apply_llm(tx, categories)
+
+    async def _apply_llm(self, tx: Transaction, categories: list[tuple[str, str, str | None]]) -> None:
         try:
             result = await asyncio.to_thread(
                 self._llm.classify,
@@ -143,62 +145,8 @@ class CategorizationService:
                 rule_obj.hit_count += 1
                 rule_obj.last_hit_at = datetime.now(timezone.utc)
 
-    async def _categorize_one_llm_only(self, tx: Transaction, categories: list[tuple[str, str | None]]) -> None:
-        try:
-            result = await asyncio.to_thread(
-                self._llm.classify,
-                counterparty=tx.counterparty_name,
-                description=tx.description,
-                amount=tx.amount,
-                categories=categories,
-            )
-        except AnthropicClassificationError:
-            error_log = LlmClassification(
-                transaction_id=tx.id,
-                model="unknown",
-                suggested_category_id=None,
-                accepted=False,
-                confidence=None,
-                reasoning="error",
-                prompt_tokens=None,
-                completion_tokens=None,
-            )
-            self._db.add(error_log)
-            return
-
-        # LLM returns "GroupName__CategoryName" — look up by both group and category name
-        raw = result.category_name
-        if "__" in raw:
-            group_name, cat_name = raw.split("__", 1)
-            cat_result = await self._db.execute(
-                select(Category)
-                .join(CategoryGroup, Category.group_id == CategoryGroup.id)
-                .where(CategoryGroup.name == group_name, Category.name == cat_name)
-                .limit(1)
-            )
-        else:
-            cat_result = await self._db.execute(
-                select(Category).where(Category.name == raw).limit(1)
-            )
-        category = cat_result.scalars().first()
-
-        accepted = result.confidence >= CONFIDENCE_THRESHOLD and category is not None
-        log = LlmClassification(
-            transaction_id=tx.id,
-            model=result.model,
-            suggested_category_id=category.id if category else None,
-            accepted=accepted,
-            confidence=result.confidence,
-            reasoning=result.reasoning,
-            prompt_tokens=result.prompt_tokens,
-            completion_tokens=result.completion_tokens,
-        )
-        self._db.add(log)
-
-        if accepted:
-            tx.category_id = category.id
-            tx.categorization_source = "llm"
-            tx.confidence = result.confidence
+    async def _categorize_one_llm_only(self, tx: Transaction, categories: list[tuple[str, str, str | None]]) -> None:
+        await self._apply_llm(tx, categories)
 
     async def run_batch(self, transaction_ids: list) -> dict:
         result = await self._db.execute(

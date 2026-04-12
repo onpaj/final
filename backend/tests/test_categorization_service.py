@@ -203,10 +203,12 @@ async def test_llm_only_skips_rules_and_categorizes():
     llm_result.prompt_tokens = 100
     llm_result.completion_tokens = 50
 
-    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM, \
+         patch("app.services.categorization_service.RulesEngine") as MockRules:
         MockLLM.return_value.classify.return_value = llm_result
         service = CategorizationService(mock_db)
-        await service._categorize_one_llm_only(tx, [("Groceries", None)])
+        await service._categorize_one_llm_only(tx, [("Food", "Groceries", None)])
+        MockRules.apply.assert_not_called()
 
     assert tx.category_id == groceries_id
     assert tx.categorization_source == "llm"
@@ -234,7 +236,7 @@ async def test_llm_only_error_writes_classification_row():
     with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
         MockLLM.return_value.classify.side_effect = AnthropicClassificationError("timeout")
         service = CategorizationService(mock_db)
-        await service._categorize_one_llm_only(tx, [("Groceries", None)])
+        await service._categorize_one_llm_only(tx, [("Food", "Groceries", None)])
 
     assert tx.category_id is None
     assert len(added_rows) == 1
