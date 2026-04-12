@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Transaction
+from app.db.models import LlmClassification, Transaction
 from app.db.session import get_db
 
 router = APIRouter()
@@ -34,6 +34,8 @@ class TransactionOut(BaseModel):
     is_transfer: bool
     notes: str | None
     created_at: datetime
+    llm_status: str | None = None
+    llm_confidence: Decimal | None = None
     model_config = {"from_attributes": True}
 
 
@@ -85,6 +87,7 @@ async def list_transactions(
     category_id: uuid.UUID | None = Query(None),
     needs_review: bool | None = Query(None),
     is_transfer: bool | None = Query(None),
+    include_llm_status: bool = Query(False),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -109,7 +112,38 @@ async def list_transactions(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    return result.scalars().all()
+    transactions = result.scalars().all()
+
+    if not include_llm_status:
+        return transactions  # type: ignore[return-value]
+
+    # Fetch the most recent LlmClassification per transaction (second query, merged in Python)
+    tx_ids = [tx.id for tx in transactions]
+    classifications: dict[uuid.UUID, LlmClassification] = {}
+    if tx_ids:
+        cls_result = await db.execute(
+            select(LlmClassification)
+            .where(LlmClassification.transaction_id.in_(tx_ids))
+            .order_by(LlmClassification.transaction_id, LlmClassification.created_at.desc())
+            .distinct(LlmClassification.transaction_id)
+        )
+        for cls in cls_result.scalars().all():
+            classifications[cls.transaction_id] = cls
+
+    out: list[TransactionOut] = []
+    for tx in transactions:
+        tx_out = TransactionOut.model_validate(tx)
+        cls = classifications.get(tx.id)
+        if cls is None:
+            tx_out.llm_status = "no_rule_no_llm"
+        elif cls.reasoning == "error":
+            tx_out.llm_status = "llm_error"
+        else:
+            tx_out.llm_status = "llm_rejected"
+            tx_out.llm_confidence = cls.confidence
+        out.append(tx_out)
+
+    return out
 
 
 class BulkCategorizeRequest(BaseModel):
