@@ -166,10 +166,21 @@ class CategorizationService:
             self._db.add(error_log)
             return
 
-        cat_result = await self._db.execute(
-            select(Category).where(Category.name == result.category_name)
-        )
-        category = cat_result.scalar_one_or_none()
+        # LLM returns "GroupName__CategoryName" — look up by both group and category name
+        raw = result.category_name
+        if "__" in raw:
+            group_name, cat_name = raw.split("__", 1)
+            cat_result = await self._db.execute(
+                select(Category)
+                .join(CategoryGroup, Category.group_id == CategoryGroup.id)
+                .where(CategoryGroup.name == group_name, Category.name == cat_name)
+                .limit(1)
+            )
+        else:
+            cat_result = await self._db.execute(
+                select(Category).where(Category.name == raw).limit(1)
+            )
+        category = cat_result.scalars().first()
 
         accepted = result.confidence >= CONFIDENCE_THRESHOLD and category is not None
         log = LlmClassification(

@@ -190,7 +190,7 @@ async def test_llm_only_skips_rules_and_categorizes():
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(
-        return_value=MagicMock(scalar_one_or_none=lambda: mock_category)
+        return_value=MagicMock(scalars=lambda: MagicMock(first=lambda: mock_category))
     )
     added_rows = []
     mock_db.add = MagicMock(side_effect=added_rows.append)
