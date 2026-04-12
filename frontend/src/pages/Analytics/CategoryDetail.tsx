@@ -2,11 +2,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
-import { listTransactions, bulkCategorize } from "../../api/transactions";
+import { listTransactions, bulkCategorize, type Transaction } from "../../api/transactions";
 import { listCategoryGroups } from "../../api/categories";
 import TransactionTable from "./TransactionTable";
 import CategorySidebar from "./CategorySidebar";
 import TransactionDragOverlay from "./TransactionDragOverlay";
+import ContextMenu from "../../components/ContextMenu";
+import SlideOverPanel from "../../components/SlideOverPanel";
+import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
 interface Props {
   categoryId: string;
@@ -19,12 +22,21 @@ interface Props {
 export default function CategoryDetail({ categoryId, categoryName, year, month, onBack }: Props) {
   const { t } = useTranslation();
   const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
-  const dateTo = `${year}-${String(month).padStart(2, "0")}-31`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const dateTo = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState<string>("");
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    transaction: Transaction;
+  } | null>(null);
+
+  const [rulePanel, setRulePanel] = useState<{ prefill: RulePrefill } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -68,6 +80,11 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   function toggleAll() {
     const allSelected = transactions.length > 0 && selected.size === transactions.length;
     setSelected(allSelected ? new Set() : new Set(transactions.map((tx) => tx.id)));
+  }
+
+  function handleContextMenu(e: React.MouseEvent, tx: Transaction) {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, transaction: tx });
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -155,6 +172,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
                 activeId={activeId}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
+                onContextMenu={handleContextMenu}
               />
             </div>
             <div className="lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
@@ -168,6 +186,40 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
           <TransactionDragOverlay activeId={activeId} count={selected.size} />
         </DndContext>
       )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              label: t("rules.createFromTransaction"),
+              onClick: () => {
+                const tx = contextMenu.transaction;
+                setRulePanel({
+                  prefill: {
+                    name: tx.counterparty_name ?? tx.description ?? "",
+                    counterpartyAccount: tx.counterparty_account,
+                    counterpartyName: tx.counterparty_name,
+                    description: tx.description,
+                  },
+                });
+              },
+            },
+          ]}
+        />
+      )}
+
+      <SlideOverPanel
+        open={rulePanel !== null}
+        onClose={() => setRulePanel(null)}
+        title={t("rules.newRule")}
+      >
+        {rulePanel !== null && (
+          <RuleForm prefill={rulePanel.prefill} onClose={() => setRulePanel(null)} />
+        )}
+      </SlideOverPanel>
     </div>
   );
 }
