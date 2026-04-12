@@ -7,11 +7,12 @@ export interface Transaction {
   amount: number;
   currency: string;
   counterparty_name: string | null;
-  counterparty_account: string | null;
   description: string | null;
   category_id: string | null;
   categorization_source: string | null;
   is_transfer: boolean;
+  llm_status?: "no_rule_no_llm" | "llm_rejected" | "llm_error";
+  llm_confidence?: number | null;
 }
 
 export async function listTransactions(params: {
@@ -20,6 +21,7 @@ export async function listTransactions(params: {
   date_to?: string;
   category_id?: string;
   needs_review?: boolean;
+  include_llm_status?: boolean;
   limit?: number;
   offset?: number;
 }): Promise<Transaction[]> {
