@@ -3,7 +3,7 @@ import io
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
@@ -34,7 +34,7 @@ class TransactionOut(BaseModel):
     is_transfer: bool
     notes: str | None
     created_at: datetime
-    llm_status: str | None = None
+    llm_status: Literal["no_rule_no_llm", "llm_rejected", "llm_error"] | None = None
     llm_confidence: Decimal | None = None
     model_config = {"from_attributes": True}
 
