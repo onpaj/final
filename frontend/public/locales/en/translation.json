@@ -126,7 +126,8 @@
     "selectGroup": "Select a group to manage its categories.",
     "fieldName": "Name",
     "fieldColor": "Color",
-    "fieldIsIncome": "Income category"
+    "fieldIsIncome": "Income category",
+    "income": "Income"
   },
   "settings": {
     "title": "Settings",

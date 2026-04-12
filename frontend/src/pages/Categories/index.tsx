@@ -111,6 +111,7 @@ function SortableCategoryItem({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -128,7 +129,7 @@ function SortableCategoryItem({
       )}
       <span className="flex-1 text-sm">{category.name}</span>
       {category.is_income && (
-        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Income</span>
+        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{t("categories.income")}</span>
       )}
       {category.is_system && (
         <span className="text-xs text-gray-400" title="System category">🔒</span>

@@ -126,7 +126,8 @@
     "selectGroup": "Vyberte skupinu pro správu kategorií.",
     "fieldName": "Název",
     "fieldColor": "Barva",
-    "fieldIsIncome": "Příjmová kategorie"
+    "fieldIsIncome": "Příjmová kategorie",
+    "income": "Příjem"
   },
   "settings": {
     "title": "Nastavení",
