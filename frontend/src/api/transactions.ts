@@ -7,6 +7,7 @@ export interface Transaction {
   amount: number;
   currency: string;
   counterparty_name: string | null;
+  counterparty_account: string | null;
   description: string | null;
   category_id: string | null;
   categorization_source: string | null;

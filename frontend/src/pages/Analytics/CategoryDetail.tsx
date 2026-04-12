@@ -7,8 +7,6 @@ import { listCategoryGroups } from "../../api/categories";
 import TransactionTable from "./TransactionTable";
 import CategorySidebar from "./CategorySidebar";
 import TransactionDragOverlay from "./TransactionDragOverlay";
-import SlideOverPanel from "../../components/SlideOverPanel";
-import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
 interface Props {
   categoryId: string;
@@ -28,8 +26,6 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState<string>("");
-
-  const [rulePanel, setRulePanel] = useState<{ prefill: RulePrefill } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -174,15 +170,6 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
         </DndContext>
       )}
 
-      <SlideOverPanel
-        open={rulePanel !== null}
-        onClose={() => setRulePanel(null)}
-        title={t("rules.newRule")}
-      >
-        {rulePanel !== null && (
-          <RuleForm prefill={rulePanel.prefill} onClose={() => setRulePanel(null)} />
-        )}
-      </SlideOverPanel>
     </div>
   );
 }
