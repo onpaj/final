@@ -114,6 +114,7 @@
     "fieldName": "Název",
     "fieldMatchType": "Typ shody",
     "fieldMatchValue": {
+      "default": "Hodnota pro porovnání",
       "counterparty_account_equals": "IBAN / číslo účtu (přesná shoda)",
       "counterparty_contains": "Název obsahuje",
       "description_contains": "Popis obsahuje"

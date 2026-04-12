@@ -114,6 +114,7 @@
     "fieldName": "Name",
     "fieldMatchType": "Match type",
     "fieldMatchValue": {
+      "default": "Match value",
       "counterparty_account_equals": "IBAN / account number (exact match)",
       "counterparty_contains": "Name contains",
       "description_contains": "Description contains"
