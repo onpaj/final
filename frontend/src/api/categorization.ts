@@ -7,8 +7,19 @@ export interface BatchClassificationResult {
 
 export async function runBatchClassification(): Promise<BatchClassificationResult> {
   const { data } = await client.post<BatchClassificationResult>(
-    "/api/categorization/batch",
+    "/api/categorize/batch",
     {},
+  );
+  return data;
+}
+
+export async function recategorizeBatch(
+  transaction_ids: string[],
+  mode: "rules" | "llm" | "full",
+): Promise<BatchClassificationResult> {
+  const { data } = await client.post<BatchClassificationResult>(
+    "/api/categorize/batch",
+    { transaction_ids, mode },
   );
   return data;
 }
