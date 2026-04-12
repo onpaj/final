@@ -92,7 +92,11 @@
     "historyColRows": "Řádky",
     "historyColImported": "Importováno",
     "historyColDuplicates": "Duplikáty",
-    "colClassification": "Klasifikace"
+    "colClassification": "Klasifikace",
+    "badgeTransfer": "přesun",
+    "badgeRule": "pravidlo",
+    "badgeLlm": "AI",
+    "badgeManual": "ručně"
   },
   "rules": {
     "title": "Pravidla kategorizace",

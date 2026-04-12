@@ -24,31 +24,32 @@ interface BatchTx {
 }
 
 function CategorizationBadge({ tx }: { tx: BatchTx }) {
+  const { t } = useTranslation();
   if (tx.is_transfer) {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-        transfer
+        {t("imports.badgeTransfer")}
       </span>
     );
   }
   if (tx.categorization_source === "rule") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-        rule
+        {t("imports.badgeRule")}
       </span>
     );
   }
   if (tx.categorization_source === "llm") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-        llm
+        {t("imports.badgeLlm")}
       </span>
     );
   }
   if (tx.categorization_source === "manual") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-        manual
+        {t("imports.badgeManual")}
       </span>
     );
   }

@@ -92,7 +92,11 @@
     "historyColRows": "Rows",
     "historyColImported": "Imported",
     "historyColDuplicates": "Duplicates",
-    "colClassification": "Classification"
+    "colClassification": "Classification",
+    "badgeTransfer": "transfer",
+    "badgeRule": "rule",
+    "badgeLlm": "llm",
+    "badgeManual": "manual"
   },
   "rules": {
     "title": "Categorization Rules",
