@@ -144,6 +144,8 @@ async def create_category(body: CategoryCreate, db: AsyncSession = Depends(get_d
 # NOTE: /reorder must be defined before /{category_id}
 @router.patch("/reorder", response_model=list[CategoryOut])
 async def reorder_categories(items: list[ReorderItem], db: AsyncSession = Depends(get_db)):
+    # NOTE: items are not validated to belong to the same group.
+    # The frontend always sends same-group items; cross-group reorder may produce undefined sort_order overlap.
     for item in items:
         cat = await db.get(Category, item.id)
         if cat:
@@ -170,5 +172,7 @@ async def delete_category(category_id: uuid.UUID, db: AsyncSession = Depends(get
     cat = await db.get(Category, category_id)
     if not cat:
         raise HTTPException(404, "Category not found")
+    if cat.is_system:
+        raise HTTPException(400, "System categories cannot be deleted")
     await db.delete(cat)
     await db.commit()
