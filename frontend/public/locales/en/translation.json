@@ -3,6 +3,7 @@
     "analytics": "Analytics",
     "imports": "Imports",
     "rules": "Rules",
+    "categories": "Categories",
     "settings": "Settings"
   },
   "common": {
@@ -13,7 +14,10 @@
     "date": "Date",
     "currency": "Currency",
     "name": "Name",
-    "status": "Status"
+    "status": "Status",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit"
   },
   "status": {
     "processing": "Processing…",
@@ -84,12 +88,46 @@
   },
   "rules": {
     "title": "Categorization Rules",
+    "newRule": "New Rule",
+    "editRule": "Edit Rule",
     "colPriority": "Priority",
     "colName": "Name",
     "colType": "Type",
+    "colMatchValue": "Match Value",
+    "colCategory": "Category",
     "colHits": "Hits",
+    "colEnabled": "Enabled",
     "active": "Active",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "deleteConfirm": "Delete this rule?",
+    "matchType": {
+      "counterparty_account_equals": "Account Number",
+      "counterparty_contains": "Counterparty Name",
+      "description_contains": "Description"
+    },
+    "fieldName": "Name",
+    "fieldMatchType": "Match type",
+    "fieldMatchValue": {
+      "counterparty_account_equals": "IBAN / account number (exact match)",
+      "counterparty_contains": "Name contains",
+      "description_contains": "Description contains"
+    },
+    "fieldCategory": "Category",
+    "fieldPriority": "Priority",
+    "fieldEnabled": "Enabled"
+  },
+  "categories": {
+    "title": "Categories",
+    "groupsTitle": "Groups",
+    "categoriesTitle": "Categories",
+    "newGroup": "New Group",
+    "newCategory": "New Category",
+    "editCategory": "Edit Category",
+    "selectGroup": "Select a group to manage its categories.",
+    "fieldName": "Name",
+    "fieldColor": "Color",
+    "fieldIsIncome": "Income category",
+    "income": "Income"
   },
   "settings": {
     "title": "Settings",

@@ -3,6 +3,7 @@
     "analytics": "Analýzy",
     "imports": "Importy",
     "rules": "Pravidla",
+    "categories": "Kategorie",
     "settings": "Nastavení"
   },
   "common": {
@@ -13,7 +14,10 @@
     "date": "Datum",
     "currency": "Měna",
     "name": "Název",
-    "status": "Stav"
+    "status": "Stav",
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "edit": "Upravit"
   },
   "status": {
     "processing": "Zpracování…",
@@ -84,12 +88,46 @@
   },
   "rules": {
     "title": "Pravidla kategorizace",
+    "newRule": "Nové pravidlo",
+    "editRule": "Upravit pravidlo",
     "colPriority": "Priorita",
     "colName": "Název",
     "colType": "Typ",
+    "colMatchValue": "Hodnota",
+    "colCategory": "Kategorie",
     "colHits": "Shody",
+    "colEnabled": "Aktivní",
     "active": "Aktivní",
-    "disabled": "Vypnuto"
+    "disabled": "Vypnuto",
+    "deleteConfirm": "Smazat toto pravidlo?",
+    "matchType": {
+      "counterparty_account_equals": "Číslo účtu",
+      "counterparty_contains": "Název protistrany",
+      "description_contains": "Popis"
+    },
+    "fieldName": "Název",
+    "fieldMatchType": "Typ shody",
+    "fieldMatchValue": {
+      "counterparty_account_equals": "IBAN / číslo účtu (přesná shoda)",
+      "counterparty_contains": "Název obsahuje",
+      "description_contains": "Popis obsahuje"
+    },
+    "fieldCategory": "Kategorie",
+    "fieldPriority": "Priorita",
+    "fieldEnabled": "Aktivní"
+  },
+  "categories": {
+    "title": "Kategorie",
+    "groupsTitle": "Skupiny",
+    "categoriesTitle": "Kategorie",
+    "newGroup": "Nová skupina",
+    "newCategory": "Nová kategorie",
+    "editCategory": "Upravit kategorii",
+    "selectGroup": "Vyberte skupinu pro správu kategorií.",
+    "fieldName": "Název",
+    "fieldColor": "Barva",
+    "fieldIsIncome": "Příjmová kategorie",
+    "income": "Příjem"
   },
   "settings": {
     "title": "Nastavení",

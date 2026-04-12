@@ -11,6 +11,7 @@ export default function NavBar() {
     { to: "/", label: t("nav.analytics") },
     { to: "/imports", label: t("nav.imports") },
     { to: "/rules", label: t("nav.rules") },
+    { to: "/categories", label: t("nav.categories") },
     { to: "/settings", label: t("nav.settings") },
   ];
 
