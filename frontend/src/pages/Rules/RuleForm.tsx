@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Rule, createRule, updateRule } from "../../api/rules";
+import type { Rule } from "../../api/rules";
+import { createRule, updateRule } from "../../api/rules";
 import { listCategoryGroups } from "../../api/categories";
+
+export interface RulePrefill {
+  name: string;
+  counterpartyAccount: string | null;
+  counterpartyName: string | null;
+  description: string | null;
+}
 
 interface Props {
   rule?: Rule;
+  prefill?: RulePrefill;
   onClose: () => void;
 }
 
@@ -24,12 +33,12 @@ function buildMatchValue(type: MatchType, value: string): Record<string, string>
   return { value };
 }
 
-export default function RuleForm({ rule, onClose }: Props) {
+export default function RuleForm({ rule, prefill, onClose }: Props) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [name, setName] = useState(rule?.name ?? "");
-  const [matchType, setMatchType] = useState<MatchType>(
-    (rule?.match_type as MatchType) ?? "counterparty_account_equals"
+  const [name, setName] = useState(rule?.name ?? prefill?.name ?? "");
+  const [matchType, setMatchType] = useState<MatchType | "">(
+    prefill ? "" : ((rule?.match_type as MatchType) ?? "counterparty_account_equals")
   );
   const [matchValue, setMatchValue] = useState(() => getInitialMatchValue(rule));
   const [categoryId, setCategoryId] = useState(rule?.category_id ?? "");
@@ -43,6 +52,7 @@ export default function RuleForm({ rule, onClose }: Props) {
 
   const save = useMutation({
     mutationFn: () => {
+      if (matchType === "") return Promise.reject(new Error("Select a match type"));
       const body = {
         name,
         match_type: matchType,
@@ -85,20 +95,39 @@ export default function RuleForm({ rule, onClose }: Props) {
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{t("rules.fieldMatchType")}</label>
         <select
+          required
           value={matchType}
           onChange={(e) => {
-            setMatchType(e.target.value as MatchType);
-            setMatchValue("");
+            const newType = e.target.value as MatchType | "";
+            setMatchType(newType);
+            if (prefill && newType !== "") {
+              if (newType === "counterparty_account_equals") {
+                setMatchValue(prefill.counterpartyAccount ?? "");
+              } else if (newType === "counterparty_contains") {
+                setMatchValue(prefill.counterpartyName ?? "");
+              } else if (newType === "description_contains") {
+                setMatchValue(prefill.description ?? "");
+              }
+            } else if (!prefill) {
+              setMatchValue("");
+            }
           }}
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
         >
+          {prefill && (
+            <option value="" disabled>
+              {t("rules.matchTypePlaceholder")}
+            </option>
+          )}
           <option value="counterparty_account_equals">{t("rules.matchType.counterparty_account_equals")}</option>
           <option value="counterparty_contains">{t("rules.matchType.counterparty_contains")}</option>
           <option value="description_contains">{t("rules.matchType.description_contains")}</option>
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{matchValueLabels[matchType]}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {matchType !== "" ? matchValueLabels[matchType] : t("rules.fieldMatchValue.default")}
+        </label>
         <input
           required
           value={matchValue}
