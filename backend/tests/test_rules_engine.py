@@ -93,3 +93,25 @@ def test_disabled_rule_skipped():
     rule = make_rule("counterparty_contains", {"value": "albert"})
     rule["enabled"] = False
     assert RulesEngine.apply(tx, [rule]) is None
+
+def test_counterparty_account_equals_match():
+    tx = make_tx(counterparty_account="CZ6508000000192000145399")
+    rule = make_rule("counterparty_account_equals", {"account": "CZ6508000000192000145399"})
+    result = RulesEngine.apply(tx, [rule])
+    assert result is not None
+    assert result.category_id == rule["category_id"]
+
+def test_counterparty_account_equals_no_match():
+    tx = make_tx(counterparty_account="CZ6508000000192000145399")
+    rule = make_rule("counterparty_account_equals", {"account": "CZ9999999999999999999999"})
+    assert RulesEngine.apply(tx, [rule]) is None
+
+def test_counterparty_account_equals_none_account():
+    tx = make_tx(counterparty_account=None)
+    rule = make_rule("counterparty_account_equals", {"account": "CZ6508000000192000145399"})
+    assert RulesEngine.apply(tx, [rule]) is None
+
+def test_counterparty_account_equals_case_insensitive():
+    tx = make_tx(counterparty_account="cz6508000000192000145399")
+    rule = make_rule("counterparty_account_equals", {"account": "CZ6508000000192000145399"})
+    assert RulesEngine.apply(tx, [rule]) is not None

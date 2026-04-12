@@ -25,6 +25,8 @@ class RulesEngine:
         if match_type == "amount_range":
             amt = abs(tx.amount)
             return Decimal(str(match_value["min"])) <= amt <= Decimal(str(match_value["max"]))
+        if match_type == "counterparty_account_equals":
+            return (tx.counterparty_account or "").lower() == match_value["account"].lower()
         _logger.warning("Unknown match_type %r — rule will never match", match_type)
         return False
 
