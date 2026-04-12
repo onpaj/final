@@ -58,6 +58,12 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     onSuccess: invalidateAndClear,
   });
 
+  const categorizeMutation = useMutation({
+    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string }) =>
+      bulkCategorize(ids, categoryId),
+    onSuccess: invalidateAndClear,
+  });
+
   function toggleRow(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -154,8 +160,10 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
                 transactions={transactions}
                 selected={selected}
                 activeId={activeId}
+                categoryGroups={categoryGroups}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
+                onCategorize={(ids, categoryId) => categorizeMutation.mutate({ ids, categoryId })}
               />
             </div>
             <div className="lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
