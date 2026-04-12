@@ -56,6 +56,12 @@ export default function ReviewPage() {
     onError: () => setActionError(t("review.runError")),
   });
 
+  const categorizeMutation = useMutation({
+    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string }) =>
+      bulkCategorize(ids, categoryId),
+    onSuccess: invalidateAndClear,
+  });
+
   const isActing = runRulesMutation.isPending || runLlmMutation.isPending;
 
   function toggleRow(id: string) {
@@ -155,8 +161,10 @@ export default function ReviewPage() {
                 selected={selected}
                 activeId={activeId}
                 showReasonColumn={true}
+                categoryGroups={categoryGroups}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
+                onCategorize={(ids, categoryId) => categorizeMutation.mutate({ ids, categoryId })}
               />
             </div>
             <div className="lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
