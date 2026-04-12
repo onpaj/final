@@ -1,15 +1,19 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from app.config import settings
 
 app = FastAPI(title="Finance Analyzer", version="0.1.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if settings.environment == "development":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 from app.api import accounts, imports, transactions, categories, rules, categorization, analytics
 from app.api import settings as settings_router
@@ -22,3 +26,8 @@ app.include_router(rules.router, prefix="/api/rules", tags=["rules"])
 app.include_router(categorization.router, prefix="/api/categorize", tags=["categorization"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
+
+# Serve frontend static files in production
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.is_dir():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")

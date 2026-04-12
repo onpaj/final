@@ -1,0 +1,14 @@
+.git
+.github
+.worktrees
+.superpowers
+backend/.venv
+backend/.env
+backend/tests
+frontend/node_modules
+frontend/dist
+data/
+sample_data/
+docs/
+__pycache__
+*.pyc

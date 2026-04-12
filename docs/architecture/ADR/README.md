@@ -19,6 +19,7 @@ See [ADR-0000](ADR-0000-adr-process.md) for how ADRs are written and maintained.
 | [ADR-0007](ADR-0007-transfer-detection.md) | Transfer Detection: Auto-Match Cross-Account Pairs | Accepted |
 | [ADR-0008](ADR-0008-llm-privacy-posture.md) | LLM Privacy Posture | Accepted |
 | [ADR-0009](ADR-0009-scope-personal-single-household.md) | Scope: Personal Single-Household | Accepted |
+| [ADR-0010](ADR-0010-azure-container-deployment.md) | Azure Container Web App Deployment | Accepted |
 
 ## Statuses
 

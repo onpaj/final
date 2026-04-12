@@ -66,7 +66,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     }
   }
 
-  const exportUrl = `${client.defaults.baseURL}/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&category_id=${categoryId}`;
+  const exportUrl = `/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&category_id=${categoryId}`;
 
   return (
     <div>

@@ -1,7 +1,6 @@
 import json
 import uuid
 from datetime import date, datetime
-from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -10,9 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Account, ImportBatch, Transaction
 from app.db.session import AsyncSessionLocal, get_db
+from app.services import blob_storage
 from app.services.import_service import ImportService
-
-UPLOADS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data" / "uploads"
 
 router = APIRouter()
 
@@ -94,8 +92,7 @@ async def start_import(
     await db.commit()
     await db.refresh(batch)
 
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    (UPLOADS_DIR / f"{batch.id}.csv").write_bytes(file_bytes)
+    blob_storage.upload_file(str(batch.id), file_bytes)
 
     background_tasks.add_task(_run_import, batch.id, file_bytes, parsed_mapping)
     return ImportInitiated(batch_id=batch.id, message="Import started")
@@ -110,13 +107,13 @@ async def retry_batch(
     batch = await db.get(ImportBatch, batch_id)
     if not batch or batch.status != "failed":
         raise HTTPException(status_code=400, detail="Only failed batches can be retried")
-    upload_path = UPLOADS_DIR / f"{batch_id}.csv"
-    if not upload_path.exists():
-        raise HTTPException(status_code=409, detail="Original file not found; please re-upload")
+    file_bytes = blob_storage.download_file(str(batch_id))
+    if file_bytes is None:
+        raise HTTPException(status_code=404, detail="Upload file not found")
     batch.status = "processing"
     batch.error_message = None
     await db.commit()
-    background_tasks.add_task(_run_import, batch.id, upload_path.read_bytes(), batch.column_mapping)
+    background_tasks.add_task(_run_import, batch.id, file_bytes, batch.column_mapping)
     return ImportInitiated(batch_id=batch.id, message="Retry started")
 
 
