@@ -4,7 +4,8 @@
     "imports": "Imports",
     "rules": "Rules",
     "categories": "Categories",
-    "settings": "Settings"
+    "settings": "Settings",
+    "review": "Needs Review"
   },
   "common": {
     "loading": "Loading…",
@@ -180,5 +181,11 @@
     "reclassifyRunning": "Running…",
     "reclassifyDone": "Done — {{categorized}} categorized, {{needs_review}} need review",
     "reclassifyFailed": "Classification failed. Please try again."
+  },
+  "review": {
+    "title": "Needs Review",
+    "empty": "All transactions are categorized.",
+    "colReason": "Reason",
+    "countBadge": "{{count}}"
   }
 }
