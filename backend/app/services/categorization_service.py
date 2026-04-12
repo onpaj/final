@@ -148,20 +148,26 @@ class CategorizationService:
     async def _categorize_one_llm_only(self, tx: Transaction, categories: list[tuple[str, str, str | None]]) -> None:
         await self._apply_llm(tx, categories)
 
-    async def run_batch(self, transaction_ids: list) -> dict:
+    async def run_batch(self, transaction_ids: list, mode: str = "full") -> dict:
         result = await self._db.execute(
             select(Transaction).where(Transaction.id.in_(transaction_ids))
         )
         transactions = result.scalars().all()
-        rules = await self._load_rules()
-        categories = await self._load_categories()
+
+        rules = await self._load_rules() if mode in ("rules", "full") else []
+        categories = await self._load_categories() if mode in ("llm", "full") else []
 
         categorized = 0
         needs_review = 0
         for tx in transactions:
             if tx.category_id is not None:
                 continue
-            await self._categorize_one(tx, rules, categories)
+            if mode == "rules":
+                await self._categorize_one_rules_only(tx, rules)
+            elif mode == "llm":
+                await self._categorize_one_llm_only(tx, categories)
+            else:
+                await self._categorize_one(tx, rules, categories)
             if tx.category_id is not None:
                 categorized += 1
             else:

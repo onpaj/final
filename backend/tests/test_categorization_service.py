@@ -242,3 +242,34 @@ async def test_llm_only_error_writes_classification_row():
     assert len(added_rows) == 1
     assert added_rows[0].reasoning == "error"
     assert added_rows[0].accepted is False
+
+
+async def test_run_batch_rules_mode_does_not_call_llm():
+    """run_batch with mode='rules' never calls LLM even when no rule matches."""
+    tx = MagicMock()
+    tx.id = uuid.uuid4()
+    tx.counterparty_name = "UNKNOWN"
+    tx.description = ""
+    tx.amount = Decimal("-100.00")
+    tx.category_id = None
+    tx.booking_date = date(2026, 1, 1)
+    tx.value_date = None
+    tx.currency = "CZK"
+    tx.counterparty_account = None
+    tx.raw_reference = None
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(
+        return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [tx]))
+    )
+    mock_db.commit = AsyncMock()
+
+    with patch("app.services.categorization_service.AnthropicClient") as MockLLM:
+        service = CategorizationService(mock_db)
+        service._load_rules = AsyncMock(return_value=[])
+        service._load_categories = AsyncMock(return_value=[])
+        result = await service.run_batch([tx.id], mode="rules")
+        MockLLM.return_value.classify.assert_not_called()
+
+    assert result["needs_review"] == 1
+    assert result["categorized"] == 0
