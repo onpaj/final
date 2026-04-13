@@ -4,8 +4,15 @@ from sqlalchemy import event
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
+from app.config import settings
 from app.db.session import get_db, engine
 from app.db.models import Base
+
+if "azure.com" in settings.database_url:
+    raise RuntimeError(
+        "Tests must not run against the Azure database. "
+        "Set DATABASE_URL to a local/dockerized Postgres instance."
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -1,10 +1,23 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
 
-app = FastAPI(title="Finance Analyzer", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from alembic.config import Config
+    from alembic import command
+    import asyncio
+
+    alembic_cfg = Config(str(Path(__file__).parent.parent / "alembic.ini"))
+    await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
+    yield
+
+
+app = FastAPI(title="Finance Analyzer", version="0.1.0", lifespan=lifespan)
 
 if settings.environment == "development":
     app.add_middleware(
