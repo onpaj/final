@@ -6,6 +6,15 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 
 
+def setup_telemetry():
+    if settings.environment == "production" and settings.appinsights_connection_string:
+        from azure.monitor.opentelemetry import configure_azure_monitor
+        configure_azure_monitor(connection_string=settings.appinsights_connection_string)
+
+
+setup_telemetry()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from alembic.config import Config
