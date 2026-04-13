@@ -5,6 +5,16 @@ from httpx import AsyncClient, ASGITransport
 
 from app.main import app
 from app.db.session import get_db, engine
+from app.db.models import Base
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture
