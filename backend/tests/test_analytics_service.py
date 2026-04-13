@@ -15,7 +15,14 @@ async def test_monthly_summary_structure():
 
     mock_result = MagicMock()
     mock_result.all.return_value = [mock_row]
-    mock_db.execute.return_value = mock_result
+
+    mock_unclassified_row = MagicMock()
+    mock_unclassified_row.cnt = 0
+    mock_unclassified_row.total = Decimal("0")
+    mock_unclassified_result = MagicMock()
+    mock_unclassified_result.one.return_value = mock_unclassified_row
+
+    mock_db.execute.side_effect = [mock_result, mock_unclassified_result]
 
     service = AnalyticsService(mock_db)
     summary = await service.monthly_summary(2026, 4)
