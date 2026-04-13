@@ -97,7 +97,13 @@ export default function AnalyticsPage() {
       {tab === "overview" && summary && level.view === "summary" && (
         <MonthSummary
           summary={summary}
-          onGroupClick={(groupName) => setLevel({ view: "group", groupName })}
+          onGroupClick={(groupName) => {
+            if (groupName === "__unclassified__") {
+              setLevel({ view: "category", groupName: "__unclassified__", categoryId: "__unclassified__", categoryName: "__unclassified__" });
+            } else {
+              setLevel({ view: "group", groupName });
+            }
+          }}
         />
       )}
 
@@ -117,7 +123,11 @@ export default function AnalyticsPage() {
           categoryName={level.categoryName}
           year={year}
           month={month}
-          onBack={() => setLevel({ view: "group", groupName: level.groupName })}
+          onBack={() =>
+            level.groupName === "__unclassified__"
+              ? setLevel({ view: "summary" })
+              : setLevel({ view: "group", groupName: level.groupName })
+          }
         />
       )}
     </div>

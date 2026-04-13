@@ -50,6 +50,7 @@
     "applyFailed": "Failed to apply. Please try again.",
     "txDate": "Date",
     "txCounterparty": "Counterparty",
+    "txCounterpartyAccount": "Account No.",
     "txDescription": "Description",
     "txAmount": "Amount",
     "noTransactions": "No transactions.",

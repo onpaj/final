@@ -1,10 +1,10 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update, delete as sql_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.db.models import Category, CategoryGroup
+from app.db.models import Category, CategoryGroup, Transaction, Rule, LlmClassification
 
 router = APIRouter()
 
@@ -14,9 +14,11 @@ class CategoryOut(BaseModel):
     group_id: uuid.UUID
     name: str
     is_income: bool
+    is_ignored: bool
     is_system: bool
     color: str | None
     sort_order: int
+    hint: str | None
     model_config = {"from_attributes": True}
 
 
@@ -47,12 +49,16 @@ class CategoryCreate(BaseModel):
     name: str
     color: str | None = None
     is_income: bool = False
+    is_ignored: bool = False
+    hint: str | None = None
 
 
 class CategoryUpdate(BaseModel):
     name: str | None = None
     color: str | None = None
     is_income: bool | None = None
+    is_ignored: bool | None = None
+    hint: str | None = None
 
 
 class ReorderItem(BaseModel):
@@ -116,6 +122,17 @@ async def delete_group(group_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     group = await db.get(CategoryGroup, group_id)
     if not group:
         raise HTTPException(404, "Group not found")
+    cat_ids_result = await db.execute(select(Category.id).where(Category.group_id == group_id))
+    cat_ids = cat_ids_result.scalars().all()
+    if cat_ids:
+        await db.execute(
+            update(Transaction).where(Transaction.category_id.in_(cat_ids)).values(category_id=None, categorization_source=None)
+        )
+        await db.execute(
+            update(LlmClassification).where(LlmClassification.suggested_category_id.in_(cat_ids)).values(suggested_category_id=None)
+        )
+        await db.execute(sql_delete(Rule).where(Rule.category_id.in_(cat_ids)))
+        await db.execute(sql_delete(Category).where(Category.group_id == group_id))
     await db.delete(group)
     await db.commit()
 
@@ -167,12 +184,52 @@ async def update_category(category_id: uuid.UUID, body: CategoryUpdate, db: Asyn
     return cat
 
 
+@router.delete("/all", status_code=204)
+async def clear_all_categories(db: AsyncSession = Depends(get_db)):
+    await db.execute(
+        update(Transaction).values(category_id=None, categorization_source=None)
+    )
+    await db.execute(sql_delete(Rule))
+    await db.execute(sql_delete(Category).where(Category.is_system == False))
+    await db.commit()
+
+
 @router.delete("/{category_id}", status_code=204)
-async def delete_category(category_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def delete_category(
+    category_id: uuid.UUID,
+    replacement_category_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+):
     cat = await db.get(Category, category_id)
     if not cat:
         raise HTTPException(404, "Category not found")
     if cat.is_system:
         raise HTTPException(400, "System categories cannot be deleted")
+    if replacement_category_id:
+        replacement = await db.get(Category, replacement_category_id)
+        if not replacement:
+            raise HTTPException(404, "Replacement category not found")
+        await db.execute(
+            update(Transaction)
+            .where(Transaction.category_id == category_id)
+            .values(category_id=replacement_category_id)
+        )
+        await db.execute(
+            update(LlmClassification)
+            .where(LlmClassification.suggested_category_id == category_id)
+            .values(suggested_category_id=replacement_category_id)
+        )
+    else:
+        await db.execute(
+            update(Transaction)
+            .where(Transaction.category_id == category_id)
+            .values(category_id=None, categorization_source=None)
+        )
+        await db.execute(
+            update(LlmClassification)
+            .where(LlmClassification.suggested_category_id == category_id)
+            .values(suggested_category_id=None)
+        )
+    await db.execute(sql_delete(Rule).where(Rule.category_id == category_id))
     await db.delete(cat)
     await db.commit()

@@ -8,3 +8,16 @@ node_modules/
 __pycache__/
 *.pyc
 .worktrees/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+
+# Logs, tmp, screenshots
+*.log
+*.tmp
+tmp/
+logs/
+.playwright-mcp/

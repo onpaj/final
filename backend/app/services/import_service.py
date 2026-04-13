@@ -1,8 +1,11 @@
 import hashlib
+import logging
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+_logger = logging.getLogger(__name__)
 
 from app.db.models import Account, ImportBatch, Transaction
 from app.services.parsers.base import TransactionRow
@@ -81,12 +84,18 @@ class ImportService:
             return
 
         # Categorization and transfer detection are OUTSIDE the try/except
-        # Their failures don't affect batch status
+        # Their failures don't affect batch status, but errors are logged
         if new_ids:
-            from app.services.categorization_service import CategorizationService
-            cat_service = CategorizationService(db)
-            await cat_service.run_batch(new_ids)
+            try:
+                from app.services.categorization_service import CategorizationService
+                cat_service = CategorizationService(db)
+                await cat_service.run_batch(new_ids)
+            except Exception:
+                _logger.exception("Categorization failed for batch %s", batch.id)
 
-            from app.services.transfer_matcher import TransferMatcher
-            transfer_matcher = TransferMatcher(db)
-            await transfer_matcher.match_batch(new_ids)
+            try:
+                from app.services.transfer_matcher import TransferMatcher
+                transfer_matcher = TransferMatcher(db)
+                await transfer_matcher.match_batch(new_ids)
+            except Exception:
+                _logger.exception("Transfer matching failed for batch %s", batch.id)

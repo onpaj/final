@@ -9,8 +9,9 @@ interface Props {
 
 export default function MonthSummary({ summary, onGroupClick }: Props) {
   const { t } = useTranslation();
+  const displayName = (name: string) => name === "__unclassified__" ? t("analytics.unclassified") : name;
   const expenseGroups = summary.groups.filter((g) => g.total < 0);
-  const pieData = expenseGroups.map((g) => ({ name: g.name, value: Math.abs(g.total), color: g.color }));
+  const pieData = expenseGroups.map((g) => ({ name: displayName(g.name), value: Math.abs(g.total), color: g.color }));
 
   return (
     <div>
@@ -56,7 +57,7 @@ export default function MonthSummary({ summary, onGroupClick }: Props) {
                 >
                   <td className="px-4 py-2.5">
                     <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: g.color }} />
-                    {g.name}
+                    {displayName(g.name)}
                   </td>
                   <td className={`px-4 py-2.5 text-right font-medium ${g.total >= 0 ? "text-green-600" : "text-gray-800"}`}>
                     {Math.abs(g.total).toLocaleString("cs-CZ")} CZK

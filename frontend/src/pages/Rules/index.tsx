@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Rule, deleteRule, listRules, updateRule } from "../../api/rules";
+import type { Rule } from "../../api/rules";
+import { deleteRule, listRules, updateRule } from "../../api/rules";
 import { listCategoryGroups } from "../../api/categories";
 import SlideOverPanel from "../../components/SlideOverPanel";
 import RuleForm from "./RuleForm";

@@ -1,0 +1,30 @@
+"id","group_id","name","is_income","color","sort_order","is_system","slug"
+"0ff8b733-66a1-4389-8739-348698b583dd","42e98675-19da-41ff-897a-98a258b58615","Dary",False,"#daf264",0,False,NULL
+"1754bf19-eda7-4e6d-a6a9-d85fa4af4bf8","906945ff-a1b1-456d-8dbe-1d56933c47f8","Kapesne",False,"#64b0f2",4,False,NULL
+"17b092e9-865b-4045-8e93-9f4d62844a8d","8723ee76-3900-4203-a74c-913da7656e99","Ubytovani",False,"#f264b0",0,False,NULL
+"2387055c-dfc5-40a2-b3da-0a7cd136bbed","c54c48ee-ba1e-4582-a831-55065b6a9bce","Prijem - Andy",True,"#64f28f",4,False,NULL
+"25345102-e081-4f09-86bd-ebe689615da0","8723ee76-3900-4203-a74c-913da7656e99","Ostatni",False,"#f264d3",2,False,NULL
+"28e35278-0752-4bdb-b691-cf2eb99db95f","cd0a068e-be22-42fa-aac8-62485c75bbd0","Sport",False,"#c064f2",3,False,NULL
+"301ddd4c-ea00-474a-a09e-9ffb9c42e152","9e1e34da-17b2-4513-ac91-71f429960779","Energie",False,"#6366f1",1,False,NULL
+"33630f03-3f39-4a07-91ba-8f23ee4cd9f4","cd0a068e-be22-42fa-aac8-62485c75bbd0","Leky",False,"#a464f2",0,False,NULL
+"34ae91aa-b5f9-4087-9914-810334dec5da","9e1e34da-17b2-4513-ac91-71f429960779","Voda",False,"#6366f1",3,False,NULL
+"3c005956-bb75-4e1f-bea6-9af0956ce6a0","906945ff-a1b1-456d-8dbe-1d56933c47f8","Auta",False,"#64a8f2",1,False,NULL
+"3f5ac50d-2220-4b08-bdf5-a9713f5b4375","c54c48ee-ba1e-4582-a831-55065b6a9bce","Prijem - Ondra",True,"#64f275",3,False,NULL
+"439216a2-f8f2-47e0-93d7-ff2712b51b08","c54c48ee-ba1e-4582-a831-55065b6a9bce","Prevody mezi ucty",False,"#f26464",5,False,NULL
+"4670b4f6-dc31-4e4e-a2d9-a4630f89c81e","cd0a068e-be22-42fa-aac8-62485c75bbd0","Zuby",False,"#b264f2",1,False,NULL
+"48a45b30-49c5-430e-b614-8e4673dee7fb","906945ff-a1b1-456d-8dbe-1d56933c47f8","Pojisteni",False,"#64a8f2",0,False,NULL
+"5b88db09-70f8-4069-9d2f-ce02570891ee","c54c48ee-ba1e-4582-a831-55065b6a9bce","Naklady ICO",False,"#64f28f",6,False,NULL
+"5f57e05e-12f0-4d4d-8e7f-9e308d0315b5","ece26a3f-d767-4e29-ba15-ea9f34c306e1","Obleceni",False,"#f28f64",2,False,NULL
+"6bd62658-ea4a-4bc7-9d42-c093d7c4451c","c54c48ee-ba1e-4582-a831-55065b6a9bce","Prijem - Pronajmy",True,"#64f275",7,False,NULL
+"76eb3ba0-dc01-424b-99cf-d177a21a960a","ece26a3f-d767-4e29-ba15-ea9f34c306e1","Jidlo venku",False,"#f28864",1,False,NULL
+"794f2531-3ba8-44b3-8cb6-ea89d14ab78c","c54c48ee-ba1e-4582-a831-55065b6a9bce","Investice - Ondra",False,"#7cf264",0,False,NULL
+"856d5b88-8257-4177-92e8-1e2072c9fbce","ece26a3f-d767-4e29-ba15-ea9f34c306e1","Zabava",False,"#f28864",0,False,NULL
+"96d2422e-c1ef-4a03-b878-2d9aeb5053cd","906945ff-a1b1-456d-8dbe-1d56933c47f8","Doprava (Vlaky, MHD)",False,"#649df2",5,False,NULL
+"ba779e50-f332-4e16-bba3-dd9bcfccb73f","906945ff-a1b1-456d-8dbe-1d56933c47f8","Sluzby (Jablotron, internet)",False,"#64c2f2",2,False,NULL
+"c32f312c-3ceb-4c1b-a525-12fba8d0b4f4","c54c48ee-ba1e-4582-a831-55065b6a9bce","Investice - Andy",False,"#64f29a",1,False,NULL
+"c84751fc-7138-44e1-844e-cb9d26e1c7bd","8723ee76-3900-4203-a74c-913da7656e99","Utrata na dovolene",False,"#f264cc",1,False,NULL
+"db195323-c521-4ed3-878e-fcba41d563bd","c54c48ee-ba1e-4582-a831-55065b6a9bce","Investice - Deti",False,"#64f26e",2,False,NULL
+"de4a66bf-c6fe-4b4f-bad4-cafb9bf1cf2f","9e1e34da-17b2-4513-ac91-71f429960779","Drevo",False,"#6366f1",2,False,NULL
+"eaddca60-67f5-43cc-af3f-74d43666ad2c","9e1e34da-17b2-4513-ac91-71f429960779","Hypoteka",False,"#6366f1",0,False,NULL
+"edbd6d8b-abee-44e0-ac53-b82e964f4afc","cd0a068e-be22-42fa-aac8-62485c75bbd0","Doktori",False,"#b264f2",2,False,NULL
+"fe642502-f5ee-4577-909f-4f7a45d66cee","906945ff-a1b1-456d-8dbe-1d56933c47f8","Volny cas (Tabory, ZUS)",False,"#64c7f2",3,False,NULL

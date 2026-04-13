@@ -55,4 +55,4 @@ On push to `main`: run backend tests (against a real Postgres service container)
 - Frontend API calls use relative `/api/*` paths (no hardcoded host)
 - CORS middleware is only active in `development` environment; in production, same-origin requests need no CORS
 - `azure-storage-blob` SDK is added as a backend dependency
-- Four GitHub Secrets required: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `AZURE_WEBAPP_NAME`, `AZURE_WEBAPP_PUBLISH_PROFILE`
+- Four GitHub Secrets required: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `AZURE_WEBAPP_NAME`, `AZURE_CREDENTIALS` (service principal JSON)

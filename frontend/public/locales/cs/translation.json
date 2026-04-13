@@ -50,6 +50,7 @@
     "applyFailed": "Přiřazení selhalo. Zkuste to znovu.",
     "txDate": "Datum",
     "txCounterparty": "Protistrana",
+    "txCounterpartyAccount": "Číslo účtu",
     "txDescription": "Popis",
     "txAmount": "Částka",
     "noTransactions": "Žádné transakce.",

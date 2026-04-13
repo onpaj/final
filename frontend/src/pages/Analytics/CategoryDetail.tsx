@@ -29,9 +29,14 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
 
   const queryClient = useQueryClient();
 
+  const isUnclassified = categoryId === "__unclassified__";
+
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions", categoryId, year, month],
-    queryFn: () => listTransactions({ date_from: dateFrom, date_to: dateTo, category_id: categoryId, limit: 500 }),
+    queryFn: () =>
+      isUnclassified
+        ? listTransactions({ date_from: dateFrom, date_to: dateTo, needs_review: true, limit: 500 })
+        : listTransactions({ date_from: dateFrom, date_to: dateTo, category_id: categoryId, limit: 500 }),
   });
 
   const { data: categoryGroups = [] } = useQuery({
@@ -98,7 +103,9 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
     setOverId(null);
   }
 
-  const exportUrl = `/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&category_id=${categoryId}`;
+  const exportUrl = isUnclassified
+    ? `/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&needs_review=true`
+    : `/api/transactions/export?date_from=${dateFrom}&date_to=${dateTo}&category_id=${categoryId}`;
 
   return (
     <div>

@@ -70,6 +70,7 @@ function DraggableRow({ transaction: tx, isChecked, isDragActive, showReasonColu
       </td>
       <td className="px-4 py-2.5 text-gray-500">{tx.booking_date}</td>
       <td className="px-4 py-2.5 font-medium">{tx.counterparty_name || "—"}</td>
+      <td className="px-4 py-2.5 text-gray-500 text-xs font-mono">{tx.counterparty_account || "—"}</td>
       <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.description || "—"}</td>
       <td className={`px-4 py-2.5 font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
         {Number(tx.amount).toLocaleString("cs-CZ")} CZK
@@ -148,7 +149,7 @@ export default function TransactionTable({
                   className="cursor-pointer"
                 />
               </th>
-              {[t("analytics.txDate"), t("analytics.txCounterparty"), t("analytics.txDescription"), t("analytics.txAmount")].map((h) => (
+              {[t("analytics.txDate"), t("analytics.txCounterparty"), t("analytics.txCounterpartyAccount"), t("analytics.txDescription"), t("analytics.txAmount")].map((h) => (
                 <th key={h} className="px-4 py-2 text-left">{h}</th>
               ))}
               {accountMap && (

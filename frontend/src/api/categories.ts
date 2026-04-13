@@ -5,9 +5,11 @@ export interface Category {
   group_id: string;
   name: string;
   is_income: boolean;
+  is_ignored: boolean;
   is_system: boolean;
   color: string | null;
   sort_order: number;
+  hint: string | null;
 }
 
 export interface CategoryGroup {
@@ -57,6 +59,8 @@ export async function createCategory(body: {
   name: string;
   color?: string;
   is_income?: boolean;
+  is_ignored?: boolean;
+  hint?: string | null;
 }): Promise<Category> {
   const { data } = await client.post<Category>("/api/categories", body);
   return data;
@@ -64,14 +68,19 @@ export async function createCategory(body: {
 
 export async function updateCategory(
   id: string,
-  body: { name?: string; color?: string; is_income?: boolean }
+  body: { name?: string; color?: string; is_income?: boolean; is_ignored?: boolean; hint?: string | null }
 ): Promise<Category> {
   const { data } = await client.patch<Category>(`/api/categories/${id}`, body);
   return data;
 }
 
-export async function deleteCategory(id: string): Promise<void> {
-  await client.delete(`/api/categories/${id}`);
+export async function deleteCategory(id: string, replacementCategoryId?: string): Promise<void> {
+  const params = replacementCategoryId ? `?replacement_category_id=${replacementCategoryId}` : "";
+  await client.delete(`/api/categories/${id}${params}`);
+}
+
+export async function clearAllCategories(): Promise<void> {
+  await client.delete("/api/categories/all");
 }
 
 export async function reorderCategories(items: ReorderItem[]): Promise<Category[]> {

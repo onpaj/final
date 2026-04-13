@@ -39,7 +39,7 @@ class AnthropicClient:
                     "input_schema": {
                         "type": "object",
                         "properties": {
-                            "category": {"type": "string", "description": "Category name from the provided list"},
+                            "category": {"type": "string", "description": "Category in 'CategoryGroup__Category' format exactly as listed"},
                             "confidence": {"type": "number", "description": "Confidence 0.0 to 1.0"},
                             "reasoning": {"type": "string", "description": "One-sentence explanation"},
                         },
@@ -75,15 +75,15 @@ class AnthropicClient:
         counterparty: str | None,
         description: str | None,
         amount: Decimal,
-        categories: list[tuple[str, str | None]],
+        categories: list[tuple[str, str, str | None]],
     ) -> ClassificationResult:
         category_lines = "\n".join(
-            f"- {name}" + (f" ({hint})" if hint else "")
-            for name, hint in categories
+            f"- {group}__{name}" + (f" ({hint})" if hint else "")
+            for group, name, hint in categories
         )
         prompt = (
             f"Classify this bank transaction into one of the categories listed below.\n"
-            f"You MUST return the category name exactly as written in the list — do not modify, translate, or combine names.\n\n"
+            f"You MUST return the category in the exact 'CategoryGroup__Category' format as written in the list — do not modify, translate, or combine names.\n\n"
             f"Counterparty: {counterparty or 'unknown'}\n"
             f"Description: {description or 'none'}\n"
             f"Amount: {amount} CZK\n\n"

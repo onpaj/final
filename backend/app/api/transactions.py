@@ -45,6 +45,7 @@ async def export_csv(
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
     category_id: uuid.UUID | None = Query(None),
+    needs_review: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     q = select(Transaction).order_by(Transaction.booking_date.desc())
@@ -56,6 +57,9 @@ async def export_csv(
         q = q.where(Transaction.booking_date <= date_to)
     if category_id is not None:
         q = q.where(Transaction.category_id == category_id)
+    if needs_review is True:
+        q = q.where(Transaction.category_id.is_(None))
+        q = q.where(Transaction.is_transfer.is_(False))
     result = await db.execute(q)
     transactions = result.scalars().all()
 

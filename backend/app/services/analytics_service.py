@@ -37,6 +37,7 @@ class AnalyticsService:
             JOIN category_groups cg ON c.group_id = cg.id
             WHERE
                 t.is_transfer = false
+                AND c.is_ignored = false
                 AND EXTRACT(YEAR FROM t.booking_date) = :year
                 AND EXTRACT(MONTH FROM t.booking_date) = :month
                 {account_filter}
@@ -70,6 +71,37 @@ class AnalyticsService:
             else:
                 expenses += row.total
 
+        unclassified_sql = text(f"""
+            SELECT COALESCE(SUM(t.amount), 0) AS total, COUNT(*) AS cnt
+            FROM transactions t
+            WHERE
+                t.is_transfer = false
+                AND t.category_id IS NULL
+                AND EXTRACT(YEAR FROM t.booking_date) = :year
+                AND EXTRACT(MONTH FROM t.booking_date) = :month
+                {account_filter}
+        """)
+        unclassified_result = await self._db.execute(unclassified_sql, params)
+        unclassified_row = unclassified_result.one()
+
+        if unclassified_row.cnt > 0:
+            unclassified_total = Decimal(str(unclassified_row.total))
+            if unclassified_total >= 0:
+                income += unclassified_total
+            else:
+                expenses += unclassified_total
+            groups["__unclassified__"] = {
+                "name": "__unclassified__",
+                "color": "#9ca3af",
+                "total": float(unclassified_total),
+                "categories": [{
+                    "id": "__unclassified__",
+                    "name": "__unclassified__",
+                    "total": float(unclassified_total),
+                    "is_income": False,
+                }],
+            }
+
         return {
             "year": year,
             "month": month,
@@ -94,6 +126,7 @@ class AnalyticsService:
             JOIN category_groups cg ON c.group_id = cg.id
             WHERE
                 t.is_transfer = false
+                AND c.is_ignored = false
                 AND (EXTRACT(YEAR FROM t.booking_date) * 100 + EXTRACT(MONTH FROM t.booking_date))
                     BETWEEN :from_ym AND :to_ym
                 {account_filter}
@@ -133,6 +166,7 @@ class AnalyticsService:
                 WHERE
                     t.is_transfer = false
                     AND c.is_income = false
+                    AND c.is_ignored = false
                     AND (EXTRACT(YEAR FROM t.booking_date) * 100 + EXTRACT(MONTH FROM t.booking_date))
                         BETWEEN :from_ym AND :to_ym
                     {account_filter}

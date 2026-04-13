@@ -27,6 +27,6 @@ COPY --from=frontend-build /app/frontend/dist/ ./static/
 COPY backend/start.sh ./start.sh
 RUN chmod +x ./start.sh
 
-EXPOSE 8000
+EXPOSE 8300
 
 CMD ["./start.sh"]

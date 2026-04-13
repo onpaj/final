@@ -107,6 +107,8 @@ class Category(Base):
     color: Mapped[str | None] = mapped_column(String, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_ignored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    hint: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     group: Mapped["CategoryGroup"] = relationship(back_populates="categories")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="category")

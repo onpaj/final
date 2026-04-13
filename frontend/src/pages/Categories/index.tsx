@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import type { DragEndEvent } from "@dnd-kit/core";
 import {
   DndContext,
   closestCenter,
-  DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -16,15 +16,15 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { Category, CategoryGroup } from "../../api/categories";
 import {
-  Category,
-  CategoryGroup,
   listCategoryGroups,
   createGroup,
   updateGroup,
   deleteGroup,
   reorderGroups,
   deleteCategory,
+  clearAllCategories,
   reorderCategories,
 } from "../../api/categories";
 import SlideOverPanel from "../../components/SlideOverPanel";
@@ -128,6 +128,9 @@ function SortableCategoryItem({
         <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: category.color }} />
       )}
       <span className="flex-1 text-sm">{category.name}</span>
+      {category.hint && (
+        <span className="text-xs text-gray-400 truncate max-w-[160px]" title={category.hint}>{category.hint}</span>
+      )}
       {category.is_income && (
         <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{t("categories.income")}</span>
       )}
@@ -153,14 +156,18 @@ export default function CategoriesPage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupColor, setNewGroupColor] = useState("#6366f1");
   const [categoryPanel, setCategoryPanel] = useState<{ groupId: string; category?: Category } | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [replacementCategoryId, setReplacementCategoryId] = useState<string>("");
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? null;
+
+  const refetchGroups = () => qc.refetchQueries({ queryKey: ["category-groups"] });
 
   const addGroup = useMutation({
     mutationFn: (vars: { name: string; color: string }) => createGroup(vars),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["category-groups"] });
+      refetchGroups();
       setAddingGroup(false);
       setNewGroupName("");
     },
@@ -170,7 +177,7 @@ export default function CategoriesPage() {
     mutationFn: (vars: { id: string; name: string; color: string }) =>
       updateGroup(vars.id, { name: vars.name, color: vars.color }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["category-groups"] });
+      refetchGroups();
       setEditingGroupId(null);
     },
   });
@@ -178,24 +185,37 @@ export default function CategoriesPage() {
   const removeGroup = useMutation({
     mutationFn: deleteGroup,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["category-groups"] });
+      refetchGroups();
       setSelectedGroupId(null);
     },
   });
 
   const reorderGroupsMutation = useMutation({
     mutationFn: reorderGroups,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["category-groups"] }),
+    onSuccess: () => refetchGroups(),
   });
 
   const removeCategory = useMutation({
-    mutationFn: deleteCategory,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["category-groups"] }),
+    mutationFn: ({ id, replacementId }: { id: string; replacementId?: string }) =>
+      deleteCategory(id, replacementId),
+    onSuccess: () => {
+      refetchGroups();
+      setDeletingCategory(null);
+      setReplacementCategoryId("");
+    },
   });
 
   const reorderCategoriesMutation = useMutation({
     mutationFn: reorderCategories,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["category-groups"] }),
+    onSuccess: () => refetchGroups(),
+  });
+
+  const clearAll = useMutation({
+    mutationFn: clearAllCategories,
+    onSuccess: () => {
+      refetchGroups();
+      setSelectedGroupId(null);
+    },
   });
 
   function handleGroupDragEnd(event: DragEndEvent) {
@@ -220,7 +240,20 @@ export default function CategoriesPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">{t("categories.title")}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t("categories.title")}</h1>
+        <button
+          onClick={() => {
+            if (window.confirm(t("categories.clearAllConfirm"))) {
+              clearAll.mutate();
+            }
+          }}
+          disabled={clearAll.isPending}
+          className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+        >
+          {t("categories.clearAll")}
+        </button>
+      </div>
       <div className="flex gap-6">
         {/* Left: Groups */}
         <div className="w-80 flex-shrink-0">
@@ -312,7 +345,7 @@ export default function CategoriesPage() {
                       key={c.id}
                       category={c}
                       onEdit={() => setCategoryPanel({ groupId: selectedGroup.id, category: c })}
-                      onDelete={() => removeCategory.mutate(c.id)}
+                      onDelete={() => { setDeletingCategory(c); setReplacementCategoryId(""); }}
                     />
                   ))}
                 </SortableContext>
@@ -335,6 +368,61 @@ export default function CategoriesPage() {
           />
         )}
       </SlideOverPanel>
+
+      {deletingCategory && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full mx-4">
+            <h2 className="text-base font-semibold text-gray-900 mb-1">
+              {t("categories.deleteCategory")}
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              <span className="font-medium">{deletingCategory.name}</span>
+              {" — "}{t("categories.deleteCategoryHint")}
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("categories.reassignTo")}
+              </label>
+              <select
+                value={replacementCategoryId}
+                onChange={(e) => setReplacementCategoryId(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="">{t("categories.reassignNone")}</option>
+                {groups.flatMap((g) =>
+                  g.categories
+                    .filter((c) => c.id !== deletingCategory.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {g.name} / {c.name}
+                      </option>
+                    ))
+                )}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  removeCategory.mutate({
+                    id: deletingCategory.id,
+                    replacementId: replacementCategoryId || undefined,
+                  })
+                }
+                disabled={removeCategory.isPending}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+              >
+                {t("categories.confirmDelete")}
+              </button>
+              <button
+                onClick={() => setDeletingCategory(null)}
+                className="flex-1 border border-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
