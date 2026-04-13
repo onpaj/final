@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     environment: str = "development"  # "development" | "production"
     azure_storage_connection_string: str = ""
     azure_storage_container: str = "uploads"
+    appinsights_connection_string: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
