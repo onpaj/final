@@ -129,6 +129,9 @@
       "counterparty_contains": "Name contains",
       "description_contains": "Description contains"
     },
+    "fieldAccount": "Account (optional)",
+    "colAccount": "Account",
+    "accountAny": "Any account",
     "fieldCategory": "Category",
     "fieldPriority": "Priority",
     "fieldEnabled": "Enabled",

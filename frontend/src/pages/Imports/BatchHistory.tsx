@@ -3,7 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { listBatches, type Batch } from "../../api/imports";
 import { listAccounts } from "../../api/accounts";
+import { listCategories, type Category } from "../../api/categories";
 import client from "../../api/client";
+import ContextMenu from "../../components/ContextMenu";
+import SlideOverPanel from "../../components/SlideOverPanel";
+import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
 const STATUS_BADGE: Record<Batch["status"], string> = {
   processing: "bg-yellow-100 text-yellow-800",
@@ -17,6 +21,7 @@ interface BatchTx {
   amount: number;
   currency: string;
   counterparty_name: string | null;
+  counterparty_account: string | null;
   description: string | null;
   category_id: string | null;
   categorization_source: string | null;
@@ -56,41 +61,84 @@ function CategorizationBadge({ tx }: { tx: BatchTx }) {
   return <span className="text-gray-400 text-xs">—</span>;
 }
 
-function BatchTransactions({ batchId }: { batchId: string }) {
+function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreateRule: (p: RulePrefill) => void }) {
   const { t } = useTranslation();
   const { data: txs = [], isLoading } = useQuery<BatchTx[]>({
     queryKey: ["batch-transactions", batchId],
     queryFn: async () => (await client.get(`/api/imports/${batchId}/transactions`)).data,
   });
+  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["categories"], queryFn: listCategories });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tx: BatchTx } | null>(null);
 
   if (isLoading) return <p className="text-xs text-gray-400">{t("imports.loadingTx")}</p>;
   if (txs.length === 0) return <p className="text-xs text-gray-400">{t("imports.noTxFound")}</p>;
 
   return (
-    <table className="w-full text-xs">
-      <thead>
-        <tr className="text-gray-400 uppercase text-xs">
-          <th className="pr-4 py-1 text-left">{t("common.date")}</th>
-          <th className="pr-4 py-1 text-left">{t("analytics.txCounterparty")}</th>
-          <th className="pr-4 py-1 text-right">{t("analytics.txAmount")}</th>
-          <th className="pr-4 py-1 text-left">{t("common.currency")}</th>
-          <th className="pr-4 py-1 text-left">{t("imports.colClassification")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {txs.map((tx) => (
-          <tr key={tx.id} className="border-t border-gray-100">
-            <td className="pr-4 py-1 text-gray-500">{tx.booking_date}</td>
-            <td className="pr-4 py-1">{tx.counterparty_name || "—"}</td>
-            <td className={`pr-4 py-1 text-right font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
-              {tx.amount.toLocaleString("cs-CZ")}
-            </td>
-            <td className="pr-4 py-1 text-gray-400">{tx.currency}</td>
-            <td className="pr-4 py-1"><CategorizationBadge tx={tx} /></td>
+    <>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-gray-400 uppercase text-xs">
+            <th className="pr-4 py-1 text-left">{t("common.date")}</th>
+            <th className="pr-4 py-1 text-left">{t("analytics.txCounterparty")}</th>
+            <th className="pr-4 py-1 text-left">{t("analytics.txCounterpartyAccount")}</th>
+            <th className="pr-4 py-1 text-right">{t("analytics.txAmount")}</th>
+            <th className="pr-4 py-1 text-left">{t("common.currency")}</th>
+            <th className="pr-4 py-1 text-left">{t("imports.colClassification")}</th>
+            <th className="pr-4 py-1 text-left">{t("common.category")}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {txs.map((tx) => (
+            <tr
+              key={tx.id}
+              className="border-t border-gray-100 hover:bg-gray-50 cursor-context-menu"
+              onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, tx }); }}
+            >
+              <td className="pr-4 py-1 text-gray-500">{tx.booking_date}</td>
+              <td className="pr-4 py-1">{tx.counterparty_name || "—"}</td>
+              <td className="pr-4 py-1 text-gray-400 font-mono text-xs">{tx.counterparty_account || "—"}</td>
+              <td className={`pr-4 py-1 text-right font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
+                {tx.amount.toLocaleString("cs-CZ")}
+              </td>
+              <td className="pr-4 py-1 text-gray-400">{tx.currency}</td>
+              <td className="pr-4 py-1"><CategorizationBadge tx={tx} /></td>
+              <td className="pr-4 py-1">
+                {(() => {
+                  const cat = categories.find((c) => c.id === tx.category_id);
+                  if (!cat) return <span className="text-gray-300">—</span>;
+                  const bg = cat.color ? `${cat.color}22` : "#e5e7eb";
+                  const fg = cat.color ?? "#6b7280";
+                  return (
+                    <span
+                      className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                      style={{ backgroundColor: bg, color: fg }}
+                    >
+                      {cat.name}
+                    </span>
+                  );
+                })()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[{
+            label: t("analytics.createRule"),
+            onClick: () => onCreateRule({
+              name: contextMenu.tx.counterparty_name ?? contextMenu.tx.description ?? "",
+              counterpartyAccount: contextMenu.tx.counterparty_account,
+              counterpartyName: contextMenu.tx.counterparty_name,
+              description: contextMenu.tx.description,
+            }),
+          }]}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -103,6 +151,7 @@ export default function BatchHistory() {
   };
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [rulePrefill, setRulePrefill] = useState<RulePrefill | null>(null);
   const { data: batches = [], isLoading, isError } = useQuery({
     queryKey: ["batches"],
     queryFn: listBatches,
@@ -173,7 +222,7 @@ export default function BatchHistory() {
                 {expanded === b.id && (
                   <tr key={`${b.id}-detail`}>
                     <td colSpan={7} className="px-4 py-3 bg-gray-50">
-                      <BatchTransactions batchId={b.id} />
+                      <BatchTransactions batchId={b.id} onCreateRule={setRulePrefill} />
                     </td>
                   </tr>
                 )}
@@ -182,6 +231,16 @@ export default function BatchHistory() {
           </tbody>
         </table>
       )}
+
+      <SlideOverPanel
+        open={rulePrefill !== null}
+        onClose={() => setRulePrefill(null)}
+        title={t("rules.newRule")}
+      >
+        {rulePrefill && (
+          <RuleForm prefill={rulePrefill} onClose={() => setRulePrefill(null)} />
+        )}
+      </SlideOverPanel>
     </div>
   );
 }

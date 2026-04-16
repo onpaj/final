@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Rule } from "../../api/rules";
 import { deleteRule, listRules, updateRule } from "../../api/rules";
 import { listCategoryGroups } from "../../api/categories";
+import { listAccounts } from "../../api/accounts";
 import SlideOverPanel from "../../components/SlideOverPanel";
 import RuleForm from "./RuleForm";
 
@@ -19,6 +20,14 @@ export default function RulesPage() {
     groups.forEach((g) => g.categories.forEach((c) => { map[c.id] = c.name; }));
     return map;
   }, [groups]);
+
+  const { data: accounts = [] } = useQuery({ queryKey: ["accounts"], queryFn: listAccounts });
+
+  const accountById = useMemo(() => {
+    const map: Record<string, string> = {};
+    accounts.forEach((a) => { map[a.id] = a.name; });
+    return map;
+  }, [accounts]);
 
   const remove = useMutation({
     mutationFn: deleteRule,
@@ -50,6 +59,7 @@ export default function RulesPage() {
                 t("rules.colName"),
                 t("rules.colType"),
                 t("rules.colMatchValue"),
+                t("rules.colAccount"),
                 t("rules.colCategory"),
                 t("rules.colHits"),
                 t("rules.colEnabled"),
@@ -71,6 +81,9 @@ export default function RulesPage() {
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500 max-w-[160px] truncate">
                   {String(r.match_value.account ?? r.match_value.value ?? "")}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {r.account_id ? accountById[r.account_id] ?? "—" : <span className="text-gray-300">{t("rules.accountAny")}</span>}
                 </td>
                 <td className="px-4 py-3 text-xs">{categoryById[r.category_id] ?? "—"}</td>
                 <td className="px-4 py-3">{r.hit_count}</td>

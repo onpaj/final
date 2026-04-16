@@ -129,6 +129,9 @@
       "counterparty_contains": "Název obsahuje",
       "description_contains": "Popis obsahuje"
     },
+    "fieldAccount": "Účet (volitelný)",
+    "colAccount": "Účet",
+    "accountAny": "Libovolný účet",
     "fieldCategory": "Kategorie",
     "fieldPriority": "Priorita",
     "fieldEnabled": "Aktivní",

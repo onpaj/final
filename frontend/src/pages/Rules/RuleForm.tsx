@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Rule } from "../../api/rules";
 import { createRule, updateRule } from "../../api/rules";
 import { listCategoryGroups } from "../../api/categories";
+import { listAccounts } from "../../api/accounts";
 
 export interface RulePrefill {
   name: string;
@@ -44,10 +45,16 @@ export default function RuleForm({ rule, prefill, onClose }: Props) {
   const [categoryId, setCategoryId] = useState(rule?.category_id ?? "");
   const [priority, setPriority] = useState(rule?.priority ?? 100);
   const [enabled, setEnabled] = useState(rule?.enabled ?? true);
+  const [accountId, setAccountId] = useState<string>(rule?.account_id ?? "");
 
   const { data: groups = [] } = useQuery({
     queryKey: ["category-groups"],
     queryFn: listCategoryGroups,
+  });
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: listAccounts,
   });
 
   const save = useMutation({
@@ -60,6 +67,7 @@ export default function RuleForm({ rule, prefill, onClose }: Props) {
         category_id: categoryId,
         priority,
         enabled,
+        account_id: accountId !== "" ? accountId : null,
       };
       return rule ? updateRule(rule.id, body) : createRule(body);
     },
@@ -134,6 +142,23 @@ export default function RuleForm({ rule, prefill, onClose }: Props) {
           onChange={(e) => setMatchValue(e.target.value)}
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("rules.fieldAccount")}
+        </label>
+        <select
+          value={accountId}
+          onChange={(e) => setAccountId(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+        >
+          <option value="">{t("rules.accountAny")}</option>
+          {accounts.filter((a) => a.is_active).map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{t("rules.fieldCategory")}</label>

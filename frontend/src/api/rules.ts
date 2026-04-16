@@ -7,6 +7,7 @@ export interface Rule {
   match_type: string;
   match_value: Record<string, unknown>;
   category_id: string;
+  account_id: string | null;
   enabled: boolean;
   hit_count: number;
 }
