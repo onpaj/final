@@ -62,7 +62,9 @@
     "clearCategory": "Zrušit kategorii",
     "clearingCategory": "Mazání…",
     "clearFailed": "Zrušení selhalo. Zkuste to znovu.",
-    "changeCategory": "Změnit kategorii"
+    "changeCategory": "Změnit kategorii",
+    "unassignCategory": "Zrušit kategorii",
+    "createRule": "Vytvořit pravidlo z transakce"
   },
   "imports": {
     "title": "Importy",
@@ -162,6 +164,7 @@
     "fieldName": "Název",
     "fieldBankType": "Typ banky",
     "bankPartners": "Partners Bank",
+    "bankAirBank": "Air Bank (PDF)",
     "bankGeneric": "Generický CSV",
     "fieldIban": "IBAN (volitelné)",
     "fieldCurrency": "Měna",

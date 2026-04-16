@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { createAccount, deleteAccount, listAccounts } from "../../api/accounts";
+import { formatCzechIban } from "../../utils/formatIban";
 import client from "../../api/client";
 import { runBatchClassification, type BatchClassificationResult } from "../../api/categorization";
 
@@ -147,6 +148,7 @@ export default function SettingsPage() {
               onChange={(e) => setBank(e.target.value)}
             >
               <option value="partners">{t("settings.bankPartners")}</option>
+              <option value="airbank">{t("settings.bankAirBank")}</option>
               <option value="generic">{t("settings.bankGeneric")}</option>
             </select>
           </div>
@@ -204,7 +206,7 @@ export default function SettingsPage() {
                 <tr key={a.id} className="border-t border-gray-100">
                   <td className="px-4 py-3 font-medium">{a.name}</td>
                   <td className="px-4 py-3 text-gray-500">{a.bank}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-400">{a.iban ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-400">{a.iban ? formatCzechIban(a.iban) : "—"}</td>
                   <td className="px-4 py-3">{a.currency}</td>
                   <td className="px-4 py-3 text-right">
                     <button

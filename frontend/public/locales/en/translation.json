@@ -62,7 +62,9 @@
     "clearCategory": "Clear category",
     "clearingCategory": "Clearing…",
     "clearFailed": "Failed to clear. Please try again.",
-    "changeCategory": "Change category"
+    "changeCategory": "Change category",
+    "unassignCategory": "Unassign",
+    "createRule": "Create rule from transaction"
   },
   "imports": {
     "title": "Imports",
@@ -162,6 +164,7 @@
     "fieldName": "Name",
     "fieldBankType": "Bank type",
     "bankPartners": "Partners Bank",
+    "bankAirBank": "Air Bank (PDF)",
     "bankGeneric": "Generic CSV",
     "fieldIban": "IBAN (optional)",
     "fieldCurrency": "Currency",
