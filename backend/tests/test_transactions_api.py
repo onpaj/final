@@ -287,3 +287,26 @@ async def test_get_transaction_details_with_transfer_pair(client, mock_db):
     data = resp.json()
     assert data["transfer_pair"] is not None
     assert data["transfer_pair"]["account"]["name"] == "My Account"
+
+
+async def test_needs_review_excludes_transfers(client, mock_db):
+    """needs_review=true excludes transactions with categorization_source='transfer'."""
+    tx_transfer = _make_transaction()
+    tx_transfer.categorization_source = "transfer"
+    tx_uncategorized = _make_transaction()
+    tx_uncategorized.categorization_source = None
+
+    # Both have no category_id; only tx_uncategorized should appear in needs_review
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [tx_uncategorized]
+    mock_db.execute.return_value = mock_result
+
+    async with client as c:
+        resp = await c.get("/api/transactions?needs_review=true")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    # The transfer tx must not appear; the uncategorized one must
+    ids = [d["id"] for d in data]
+    assert str(tx_uncategorized.id) in ids
+    assert str(tx_transfer.id) not in ids
