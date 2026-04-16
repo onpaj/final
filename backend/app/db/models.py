@@ -35,7 +35,7 @@ class ImportBatch(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
     filename: Mapped[str] = mapped_column(String, nullable=False)
     parser_used: Mapped[str] = mapped_column(String, nullable=False)
     column_mapping: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -55,13 +55,13 @@ class Transaction(Base):
     __table_args__ = (
         Index("ix_transactions_account_booking", "account_id", "booking_date"),
         Index("ix_transactions_category_booking", "category_id", "booking_date"),
-        Index("ix_transactions_is_transfer", "is_transfer"),
+        Index("ix_transactions_categorization_source", "categorization_source"),
         Index("ix_transactions_applied_rule_id", "applied_rule_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
-    import_batch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("import_batches.id"), nullable=False)
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
+    import_batch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("import_batches.id", ondelete="CASCADE"), nullable=False)
     booking_date: Mapped[date] = mapped_column(Date, nullable=False)
     value_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
@@ -71,14 +71,13 @@ class Transaction(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
     category_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), nullable=True
     )
     categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual
     applied_rule_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("rules.id", ondelete="CASCADE"), nullable=True
     )
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
-    is_transfer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     transfer_pair_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     hash_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -106,7 +105,7 @@ class Category(Base):
     __tablename__ = "categories"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    group_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("category_groups.id"), nullable=False)
+    group_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("category_groups.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     is_income: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     color: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -128,13 +127,13 @@ class Rule(Base):
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     match_type: Mapped[str] = mapped_column(String, nullable=False)
     match_value: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
+    category_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_hit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     account_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=True
     )
     account: Mapped["Account | None"] = relationship(foreign_keys="[Rule.account_id]")
 
@@ -148,9 +147,9 @@ class LlmClassification(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False)
+    transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False)
     model: Mapped[str] = mapped_column(String, nullable=False)
-    suggested_category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    suggested_category_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), nullable=True)
     accepted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
