@@ -115,3 +115,54 @@ def test_counterparty_account_equals_case_insensitive():
     tx = make_tx(counterparty_account="cz6508000000192000145399")
     rule = make_rule("counterparty_account_equals", {"account": "CZ6508000000192000145399"})
     assert RulesEngine.apply(tx, [rule]) is not None
+
+
+def make_rule_with_account(match_type, match_value, account_id, category_id=None, priority=100):
+    return {
+        "id": uuid.uuid4(),
+        "match_type": match_type,
+        "match_value": match_value,
+        "category_id": category_id or uuid.uuid4(),
+        "priority": priority,
+        "enabled": True,
+        "account_id": account_id,
+    }
+
+def test_account_scoped_rule_matches_correct_account():
+    """A rule with account_id only matches transactions from that account."""
+    account_a = uuid.uuid4()
+    account_b = uuid.uuid4()
+    tx = make_tx(counterparty_name="ALBERT")
+    rule = make_rule_with_account("counterparty_contains", {"value": "albert"}, account_id=account_a)
+
+    filtered_for_a = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == account_a]
+    filtered_for_b = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == account_b]
+
+    assert RulesEngine.apply(tx, filtered_for_a) is not None
+    assert RulesEngine.apply(tx, filtered_for_b) is None
+
+def test_global_rule_matches_any_account():
+    """A rule with account_id=None applies to all accounts."""
+    account_a = uuid.uuid4()
+    account_b = uuid.uuid4()
+    tx = make_tx(counterparty_name="ALBERT")
+    rule = make_rule("counterparty_contains", {"value": "albert"})  # no account_id key
+
+    for acct in [account_a, account_b]:
+        filtered = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == acct]
+        assert RulesEngine.apply(tx, filtered) is not None
+
+def test_account_scoped_rule_higher_priority_wins():
+    """Account-specific rule wins over global rule when both match and scoped has higher priority."""
+    account_a = uuid.uuid4()
+    cat_specific = uuid.uuid4()
+    cat_global = uuid.uuid4()
+    tx = make_tx(counterparty_name="ALBERT")
+
+    rule_specific = make_rule_with_account("counterparty_contains", {"value": "albert"}, account_id=account_a, category_id=cat_specific, priority=200)
+    rule_global = make_rule("counterparty_contains", {"value": "albert"}, cat_global, priority=100)
+
+    rules = [rule_specific, rule_global]
+    filtered = [r for r in rules if r.get("account_id") is None or r["account_id"] == account_a]
+    result = RulesEngine.apply(tx, filtered)
+    assert result.category_id == cat_specific

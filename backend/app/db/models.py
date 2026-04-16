@@ -128,6 +128,10 @@ class Rule(Base):
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_hit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=True
+    )
+    account: Mapped["Account | None"] = relationship()
 
     category: Mapped["Category"] = relationship(back_populates="rules")
 
