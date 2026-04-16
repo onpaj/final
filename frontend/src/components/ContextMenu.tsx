@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 
-interface ContextMenuItem {
+export interface ContextMenuItem {
   label: string;
   onClick?: () => void;
   children?: ContextMenuItem[];
 }
+
+export const MENU_HEADER_PREFIX = "__header__";
 
 interface Props {
   x: number;
@@ -115,12 +117,12 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
             onMouseLeave={scheduleClose}
           >
             {activeItem.children.map((child) =>
-              child.label.startsWith("__header__") ? (
+              child.label.startsWith(MENU_HEADER_PREFIX) ? (
                 <div
                   key={child.label}
                   className="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide"
                 >
-                  {child.label.slice("__header__".length)}
+                  {child.label.slice(MENU_HEADER_PREFIX.length)}
                 </div>
               ) : (
                 <button

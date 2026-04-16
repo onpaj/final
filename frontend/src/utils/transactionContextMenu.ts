@@ -1,8 +1,10 @@
 import type { TFunction } from "i18next";
 import type { CategoryGroup } from "../api/categories";
 import type { RulePrefill } from "../pages/Rules/RuleForm";
+import type { ContextMenuItem } from "../components/ContextMenu";
+import { MENU_HEADER_PREFIX } from "../components/ContextMenu";
 
-interface TransactionLike {
+export interface TransactionLike {
   id: string;
   category_id: string | null;
   counterparty_name: string | null;
@@ -10,13 +12,7 @@ interface TransactionLike {
   description: string | null;
 }
 
-interface ContextMenuItem {
-  label: string;
-  onClick?: () => void;
-  children?: ContextMenuItem[];
-}
-
-interface BuildMenuOptions {
+export interface BuildMenuOptions {
   tx: TransactionLike;
   selectedIds: string[];
   categoryGroups: CategoryGroup[];
@@ -34,7 +30,7 @@ export function buildTransactionContextMenuItems({
   t,
 }: BuildMenuOptions): ContextMenuItem[] {
   const categoryMenuItems: ContextMenuItem[] = categoryGroups.flatMap((group) => [
-    { label: `__header__${group.name}` },
+    { label: `${MENU_HEADER_PREFIX}${group.name}` },
     ...(group.categories ?? []).map((cat) => ({
       label: cat.name,
       onClick: () => onCategorize(selectedIds, cat.id),
