@@ -150,6 +150,7 @@ def _make_transaction(batch_id: uuid.UUID, categorization_source: str | None = "
     tx.amount = -500.0
     tx.currency = "CZK"
     tx.counterparty_name = "Lidl"
+    tx.counterparty_account = None
     tx.description = None
     tx.category_id = uuid.uuid4()
     tx.categorization_source = categorization_source
