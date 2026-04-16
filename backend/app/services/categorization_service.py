@@ -77,6 +77,7 @@ class CategorizationService:
         await self._apply_llm(tx, categories)
 
     async def _apply_llm(self, tx: Transaction, categories: list[tuple[str, str, str | None]]) -> None:
+        tx.applied_rule_id = None
         try:
             result = await asyncio.to_thread(
                 self._llm.classify,

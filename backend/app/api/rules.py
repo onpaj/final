@@ -59,11 +59,12 @@ async def update_rule(rule_id: uuid.UUID, body: RuleUpdate, db: AsyncSession = D
     if not rule:
         raise HTTPException(404, "Rule not found")
     update_data = {k: v for k, v in body.model_dump().items() if k in body.model_fields_set}
-    if update_data.keys() & _RECATEGORIZE_FIELDS:
-        svc = CategorizationService(db)
-        await svc.recategorize_rule_affected(rule_id)
     for f, v in update_data.items():
         setattr(rule, f, v)
+    if update_data.keys() & _RECATEGORIZE_FIELDS:
+        await db.flush()  # Make updated rule visible to _load_rules
+        svc = CategorizationService(db)
+        await svc.recategorize_rule_affected(rule_id)
     await db.commit()
     await db.refresh(rule)
     return rule
