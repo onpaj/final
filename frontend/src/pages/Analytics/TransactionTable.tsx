@@ -5,6 +5,7 @@ import type { Transaction } from "../../api/transactions";
 import type { CategoryGroup } from "../../api/categories";
 import type { RulePrefill } from "../Rules/RuleForm";
 import ContextMenu from "../../components/ContextMenu";
+import TransactionDetailModal from "../../components/TransactionDetailModal";
 import { formatCzechIban } from "../../utils/formatIban";
 import { buildTransactionContextMenuItems } from "../../utils/transactionContextMenu";
 
@@ -119,6 +120,7 @@ export default function TransactionTable({
   const allSelected = transactions.length > 0 && selected.size === transactions.length;
   const someSelected = selected.size > 0 && !allSelected;
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; txId: string } | null>(null);
+  const [detailTxId, setDetailTxId] = useState<string | null>(null);
 
   function handleContextMenu(e: React.MouseEvent, txId: string) {
     setContextMenu({ x: e.clientX, y: e.clientY, txId });
@@ -134,6 +136,7 @@ export default function TransactionTable({
           categoryGroups,
           onCategorize,
           onCreateRule,
+          onShowDetails: (id) => setDetailTxId(id),
           t,
         })
       : [];
@@ -191,6 +194,7 @@ export default function TransactionTable({
           onClose={() => setContextMenu(null)}
         />
       )}
+      <TransactionDetailModal txId={detailTxId} onClose={() => setDetailTxId(null)} />
     </>
   );
 }

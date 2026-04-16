@@ -18,6 +18,7 @@ export interface BuildMenuOptions {
   categoryGroups: CategoryGroup[];
   onCategorize: (ids: string[], categoryId: string | null) => void;
   onCreateRule: (prefill: RulePrefill) => void;
+  onShowDetails?: (txId: string) => void;
   t: TFunction;
 }
 
@@ -27,6 +28,7 @@ export function buildTransactionContextMenuItems({
   categoryGroups,
   onCategorize,
   onCreateRule,
+  onShowDetails,
   t,
 }: BuildMenuOptions): ContextMenuItem[] {
   const categoryMenuItems: ContextMenuItem[] = categoryGroups.flatMap((group) => [
@@ -38,6 +40,9 @@ export function buildTransactionContextMenuItems({
   ]);
 
   return [
+    ...(onShowDetails
+      ? [{ label: t("transaction.showDetails"), onClick: () => onShowDetails(tx.id) }]
+      : []),
     { label: t("analytics.changeCategory"), children: categoryMenuItems },
     ...(tx.category_id
       ? [{
