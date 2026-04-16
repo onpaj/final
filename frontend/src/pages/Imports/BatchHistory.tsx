@@ -29,12 +29,11 @@ interface BatchTx {
   description: string | null;
   category_id: string | null;
   categorization_source: string | null;
-  is_transfer: boolean;
 }
 
 function CategorizationBadge({ tx }: { tx: BatchTx }) {
   const { t } = useTranslation();
-  if (tx.is_transfer) {
+  if (tx.categorization_source === "transfer") {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
         {t("imports.badgeTransfer")}
@@ -98,6 +97,7 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
             <th className="pr-4 py-1 text-left">{t("common.date")}</th>
             <th className="pr-4 py-1 text-left">{t("analytics.txCounterparty")}</th>
             <th className="pr-4 py-1 text-left">{t("analytics.txCounterpartyAccount")}</th>
+            <th className="pr-4 py-1 text-left">{t("analytics.txDescription")}</th>
             <th className="pr-4 py-1 text-right">{t("analytics.txAmount")}</th>
             <th className="pr-4 py-1 text-left">{t("common.currency")}</th>
             <th className="pr-4 py-1 text-left">{t("imports.colClassification")}</th>
@@ -114,6 +114,7 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
               <td className="pr-4 py-1 text-gray-500">{tx.booking_date}</td>
               <td className="pr-4 py-1">{tx.counterparty_name || "—"}</td>
               <td className="pr-4 py-1 text-gray-400 font-mono text-xs">{tx.counterparty_account || "—"}</td>
+              <td className="pr-4 py-1 text-gray-500">{tx.description || "—"}</td>
               <td className={`pr-4 py-1 text-right font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
                 {tx.amount.toLocaleString("cs-CZ")}
               </td>
@@ -239,7 +240,7 @@ export default function BatchHistory() {
                 </tr>
                 {expanded === b.id && (
                   <tr key={`${b.id}-detail`}>
-                    <td colSpan={7} className="px-4 py-3 bg-gray-50">
+                    <td colSpan={8} className="px-4 py-3 bg-gray-50">
                       <BatchTransactions batchId={b.id} onCreateRule={setRulePrefill} />
                     </td>
                   </tr>

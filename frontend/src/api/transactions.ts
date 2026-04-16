@@ -11,7 +11,6 @@ export interface Transaction {
   description: string | null;
   category_id: string | null;
   categorization_source: string | null;
-  is_transfer: boolean;
   llm_status?: "no_rule_no_llm" | "llm_rejected" | "llm_error";
   llm_confidence?: number | null;
 }
@@ -56,7 +55,6 @@ export interface TransactionDetail {
   counterparty_account: string | null;
   description: string | null;
   raw_reference: string | null;
-  is_transfer: boolean;
   transfer_pair_id: string | null;
   categorization_source: string | null;
   confidence: number | null;
