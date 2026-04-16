@@ -11,6 +11,7 @@ from app.db.models import Account, ImportBatch, Transaction
 from app.services.parsers.base import TransactionRow
 from app.services.parsers.generic_csv import GenericCsvParser
 from app.services.parsers.partners import PartnersParser
+from app.services.parsers.airbank_pdf import AirBankPdfParser
 
 
 
@@ -36,6 +37,8 @@ class ImportService:
         try:
             if account.bank == "partners":
                 rows = PartnersParser().parse(file_bytes)
+            elif account.bank == "airbank":
+                rows = AirBankPdfParser().parse(file_bytes)
             else:
                 if not column_mapping:
                     column_mapping = batch.column_mapping
