@@ -4,6 +4,7 @@ data/uploads/
 .superpowers/
 backend/.env
 backend/.env.test
+backend/.env.prod
 backend/.venv/
 node_modules/
 __pycache__/

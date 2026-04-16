@@ -7,6 +7,7 @@ import { MENU_HEADER_PREFIX } from "../components/ContextMenu";
 export interface TransactionLike {
   id: string;
   category_id: string | null;
+  categorization_source: string | null;
   counterparty_name: string | null;
   counterparty_account: string | null;
   description: string | null;
@@ -44,7 +45,7 @@ export function buildTransactionContextMenuItems({
       ? [{ label: t("transaction.showDetails"), onClick: () => onShowDetails(tx.id) }]
       : []),
     { label: t("analytics.changeCategory"), children: categoryMenuItems },
-    ...(tx.category_id
+    ...(tx.category_id || tx.categorization_source === "transfer"
       ? [{
           label: t("analytics.unassignCategory"),
           onClick: () => onCategorize(selectedIds, null),

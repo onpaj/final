@@ -96,9 +96,3 @@ class ImportService:
             except Exception:
                 _logger.exception("Categorization failed for batch %s", batch.id)
 
-            try:
-                from app.services.transfer_matcher import TransferMatcher
-                transfer_matcher = TransferMatcher(db)
-                await transfer_matcher.match_batch(new_ids)
-            except Exception:
-                _logger.exception("Transfer matching failed for batch %s", batch.id)

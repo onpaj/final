@@ -104,6 +104,7 @@ FinAl/
 All significant decisions are recorded as ADRs — see [`docs/architecture/ADR/README.md`](docs/architecture/ADR/README.md).
 
 Short summary of the most impactful ones:
+- **Categorization pipeline order: Transfer → Rules → LLM, first match wins** — `categorization_source` is set by the first strategy that matches; subsequent strategies must not overwrite it. The guard in `run_batch` skips any transaction with `categorization_source is not None`. Transfer detection always runs before rules and LLM; it must not be called again separately after the pipeline (doing so was a bug that caused double-processing).
 - **Rules-first categorization** — rules are evaluated before the LLM; LLM is called only for unmatched transactions.
 - **LLM model escalation** — Haiku classifies first; Sonnet re-classifies if confidence < 0.7.
 - **is_transfer flag** — all analytics queries filter `WHERE is_transfer = false`.

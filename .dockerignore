@@ -4,6 +4,8 @@
 .superpowers
 backend/.venv
 backend/.env
+backend/.env.test
+backend/.env.prod
 backend/tests
 frontend/node_modules
 frontend/dist

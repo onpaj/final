@@ -1,3 +1,18 @@
+import os
+import re
+from pathlib import Path
+
+# Load .env.test into the environment before any app module is imported,
+# so that Settings() picks up the test database URL instead of .env.
+_env_test = Path(__file__).parent.parent / ".env.test"
+for _line in _env_test.read_text().splitlines():
+    _line = _line.strip()
+    if not _line or _line.startswith("#"):
+        continue
+    _m = re.match(r"^([A-Z_]+)\s*=\s*(.*)$", _line)
+    if _m:
+        os.environ[_m.group(1)] = _m.group(2).strip()
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import event
@@ -8,10 +23,10 @@ from app.config import settings
 from app.db.session import get_db, engine
 from app.db.models import Base
 
-if "azure.com" in settings.database_url:
+if "neon.tech" in settings.database_url or "azure.com" in settings.database_url:
     raise RuntimeError(
-        "Tests must not run against the Azure database. "
-        "Set DATABASE_URL to a local/dockerized Postgres instance."
+        "Tests must not run against a cloud database. "
+        "Set DATABASE_URL in .env.test to a local/dockerized Postgres instance."
     )
 
 

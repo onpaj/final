@@ -191,7 +191,7 @@ class CategorizationService:
             categories = await self._load_categories() if do_llm else []
 
             for tx in transactions:
-                if tx.category_id is not None:
+                if tx.categorization_source is not None:
                     continue
                 if do_rules and do_llm:
                     await self._categorize_one(tx, rules, categories)

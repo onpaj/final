@@ -1,11 +1,10 @@
-"""Migrate all rules from test environment to production.
+"""Migrate accounts and rules from dev environment to production.
 
-Reads DATABASE_URL from .env.test (source) and .env (destination).
+Reads DATABASE_URL from .env (source/dev) and .env.prod (destination/prod).
+- Accounts are upserted first (by UUID); name/iban/bank/currency/is_active are updated.
 - Categories are matched by ID (same seed UUIDs in both envs).
-- Accounts are matched by IBAN, then by name — rules with an account_id
-  that cannot be matched in the destination are migrated without account scope
-  and a warning is printed.
-- Existing rules (same UUID) are updated in place (upsert).
+- Rules are upserted after accounts; account_id is preserved since UUIDs match.
+- Existing records (same UUID) are updated in place (upsert).
 
 Usage:
     cd backend
@@ -19,8 +18,8 @@ from pathlib import Path
 import asyncpg
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-SRC_ENV = BACKEND_DIR / ".env.test"
-DST_ENV = BACKEND_DIR / ".env"
+SRC_ENV = BACKEND_DIR / ".env"
+DST_ENV = BACKEND_DIR / ".env.prod"
 
 
 def parse_env(path: Path) -> dict[str, str]:
@@ -40,15 +39,68 @@ def asyncpg_url(url: str) -> str:
     return url.replace("postgresql+asyncpg://", "postgresql://")
 
 
-async def fetch_accounts(conn: asyncpg.Connection) -> dict[str, str]:
-    """Return {iban: id, name: id} for all accounts."""
-    rows = await conn.fetch("SELECT id, name, iban FROM accounts")
-    mapping: dict[str, str] = {}
-    for r in rows:
-        if r["iban"]:
-            mapping[r["iban"]] = str(r["id"])
-        mapping[r["name"]] = str(r["id"])
-    return mapping
+async def migrate_accounts(src: asyncpg.Connection, dst: asyncpg.Connection, dry_run: bool) -> None:
+    accounts = await src.fetch(
+        "SELECT id, name, bank, iban, currency, is_active, created_at FROM accounts ORDER BY created_at"
+    )
+    print(f"Found {len(accounts)} accounts in source")
+    for acc in accounts:
+        print(f"  {'[DRY] ' if dry_run else ''}Upserting account: '{acc['name']}' ({acc['bank']}, iban={acc['iban']})")
+        if not dry_run:
+            await dst.execute(
+                """
+                INSERT INTO accounts (id, name, bank, iban, currency, is_active, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (id) DO UPDATE SET
+                    name      = EXCLUDED.name,
+                    bank      = EXCLUDED.bank,
+                    iban      = EXCLUDED.iban,
+                    currency  = EXCLUDED.currency,
+                    is_active = EXCLUDED.is_active
+                """,
+                acc["id"], acc["name"], acc["bank"], acc["iban"],
+                acc["currency"], acc["is_active"], acc["created_at"],
+            )
+    print(f"Accounts {'would be ' if dry_run else ''}upserted: {len(accounts)}\n")
+
+
+async def migrate_rules(src: asyncpg.Connection, dst: asyncpg.Connection, dry_run: bool) -> None:
+    rules = await src.fetch("""
+        SELECT id, name, priority, match_type, match_value,
+               category_id, enabled, account_id, created_at
+        FROM rules
+        ORDER BY priority, created_at
+    """)
+    print(f"Found {len(rules)} rules in source")
+
+    for rule in rules:
+        print(
+            f"  {'[DRY] ' if dry_run else ''}Upserting rule: "
+            f"'{rule['name']}' (priority={rule['priority']}, "
+            f"account={str(rule['account_id'])[:8] + '...' if rule['account_id'] else 'none'})"
+        )
+        if not dry_run:
+            await dst.execute(
+                """
+                INSERT INTO rules (
+                    id, name, priority, match_type, match_value,
+                    category_id, enabled, account_id, hit_count, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9)
+                ON CONFLICT (id) DO UPDATE SET
+                    name        = EXCLUDED.name,
+                    priority    = EXCLUDED.priority,
+                    match_type  = EXCLUDED.match_type,
+                    match_value = EXCLUDED.match_value,
+                    category_id = EXCLUDED.category_id,
+                    enabled     = EXCLUDED.enabled,
+                    account_id  = EXCLUDED.account_id
+                """,
+                rule["id"], rule["name"], rule["priority"], rule["match_type"],
+                rule["match_value"], rule["category_id"], rule["enabled"],
+                rule["account_id"], rule["created_at"],
+            )
+
+    print(f"Rules {'would be ' if dry_run else ''}upserted: {len(rules)}\n")
 
 
 async def run(dry_run: bool) -> None:
@@ -67,90 +119,9 @@ async def run(dry_run: bool) -> None:
     dst = await asyncpg.connect(dst_url)
 
     try:
-        # --- load account mapping from destination ---
-        dst_accounts = await fetch_accounts(dst)
-
-        # --- load source account lookup (id → iban/name) ---
-        src_account_rows = await src.fetch("SELECT id, name, iban FROM accounts")
-        src_account_map: dict[str, dict] = {str(r["id"]): dict(r) for r in src_account_rows}
-
-        # --- fetch all rules from source ---
-        rules = await src.fetch("""
-            SELECT r.id, r.name, r.priority, r.match_type, r.match_value,
-                   r.category_id, r.enabled, r.account_id, r.created_at
-            FROM rules r
-            ORDER BY r.priority, r.created_at
-        """)
-
-        print(f"Found {len(rules)} rules in source\n")
-
-        migrated = 0
-        skipped_account = 0
-
-        for rule in rules:
-            rule_id = str(rule["id"])
-            account_id_dst = None
-
-            if rule["account_id"]:
-                src_acc = src_account_map.get(str(rule["account_id"]))
-                if src_acc:
-                    # try IBAN first, then name
-                    account_id_dst = (
-                        dst_accounts.get(src_acc["iban"])
-                        if src_acc["iban"]
-                        else None
-                    ) or dst_accounts.get(src_acc["name"])
-
-                if not account_id_dst:
-                    skipped_account += 1
-                    src_label = (
-                        src_acc["name"] if src_acc else str(rule["account_id"])
-                    )
-                    print(
-                        f"  WARNING: rule '{rule['name']}' (id={rule_id}) "
-                        f"references account '{src_label}' not found in dest — "
-                        f"migrating without account scope"
-                    )
-
-            print(
-                f"  {'[DRY] ' if dry_run else ''}Upserting rule: "
-                f"'{rule['name']}' (priority={rule['priority']}, "
-                f"account={'mapped' if account_id_dst else 'none'})"
-            )
-
-            if not dry_run:
-                await dst.execute(
-                    """
-                    INSERT INTO rules (
-                        id, name, priority, match_type, match_value,
-                        category_id, enabled, account_id, hit_count, created_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $9)
-                    ON CONFLICT (id) DO UPDATE SET
-                        name        = EXCLUDED.name,
-                        priority    = EXCLUDED.priority,
-                        match_type  = EXCLUDED.match_type,
-                        match_value = EXCLUDED.match_value,
-                        category_id = EXCLUDED.category_id,
-                        enabled     = EXCLUDED.enabled,
-                        account_id  = EXCLUDED.account_id
-                    """,
-                    rule["id"],
-                    rule["name"],
-                    rule["priority"],
-                    rule["match_type"],
-                    rule["match_value"],
-                    rule["category_id"],
-                    rule["enabled"],
-                    account_id_dst,
-                    rule["created_at"],
-                )
-
-            migrated += 1
-
-        print(f"\nDone. {migrated} rules {'would be ' if dry_run else ''}upserted.")
-        if skipped_account:
-            print(f"       {skipped_account} rules had unresolved account references (migrated without account scope).")
-
+        await migrate_accounts(src, dst, dry_run)
+        await migrate_rules(src, dst, dry_run)
+        print("Migration complete.")
     finally:
         await src.close()
         await dst.close()

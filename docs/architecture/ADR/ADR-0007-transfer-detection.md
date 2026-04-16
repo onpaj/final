@@ -13,6 +13,8 @@ When a user moves money between their own accounts (e.g., Partners Bank → savi
 
 **Strategy:** Automatic transfer detection with cross-account pair matching.
 
+**Pipeline order:** Transfer detection is always the first step in `CategorizationService.run_batch`, before rules and LLM. The invariant is **Transfer → Rules → LLM, first match wins**: once `categorization_source` is set by any strategy, no subsequent strategy may overwrite it. The loop guard in `run_batch` checks `tx.categorization_source is not None` (not just `category_id`) to enforce this. Transfer detection must not be called again separately after `run_batch` — it runs exactly once, inside the pipeline.
+
 After each import batch is processed, `TransferMatcher` scans for pairs:
 1. For every transaction with a negative amount in account A, search for a transaction in any other owned account B with:
    - Amount equal in magnitude (within a small rounding tolerance, e.g., ±0.01 CZK)
