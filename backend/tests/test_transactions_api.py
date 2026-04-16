@@ -29,6 +29,8 @@ def _make_transaction(account_id: uuid.UUID | None = None) -> Transaction:
     tx.is_transfer = False
     tx.notes = None
     tx.created_at = datetime(2026, 1, 15, 10, 0, 0)
+    tx.raw_reference = None
+    tx.applied_rule_id = None
     return tx
 
 
@@ -235,11 +237,9 @@ async def test_get_transaction_details_not_found(client, mock_db):
 async def test_get_transaction_details_basic(client, mock_db):
     tx = _make_transaction()
     tx.value_date = None
-    tx.raw_reference = None
     tx.is_transfer = False
     tx.transfer_pair_id = None
     tx.category_id = None
-    tx.applied_rule_id = None
     acc = _make_account(tx.account_id)
 
     tx_result = MagicMock()

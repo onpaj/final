@@ -239,6 +239,8 @@ async def get_transaction_details(
 
     result = await db.execute(select(Account).where(Account.id == tx.account_id))
     account = result.scalars().first()
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found for transaction")
 
     category = None
     if tx.category_id is not None:
@@ -257,6 +259,8 @@ async def get_transaction_details(
         if pair_tx is not None:
             result = await db.execute(select(Account).where(Account.id == pair_tx.account_id))
             pair_account = result.scalars().first()
+            if pair_account is None:
+                raise HTTPException(status_code=404, detail="Account not found for transfer pair")
             transfer_pair = TransferPairOut(
                 id=pair_tx.id,
                 amount=pair_tx.amount,
