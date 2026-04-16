@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -38,7 +39,7 @@ class CategorizationService:
         ]
 
     @staticmethod
-    def _rules_for_account(rules: list[dict], account_id) -> list[dict]:
+    def _rules_for_account(rules: list[dict], account_id: uuid.UUID) -> list[dict]:
         return [r for r in rules if r.get("account_id") is None or r["account_id"] == account_id]
 
     async def _load_categories(self) -> list[tuple[str, str, str | None]]:
