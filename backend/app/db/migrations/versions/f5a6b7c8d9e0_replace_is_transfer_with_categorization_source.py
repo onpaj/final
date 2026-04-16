@@ -16,7 +16,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Backfill: existing transfers become categorization_source = 'transfer'
+    # Backfill: set categorization_source='transfer' for all rows where is_transfer=true.
+    # Intentionally overwrites any existing categorization_source value (e.g. 'rule' or 'llm'
+    # if the pair was later reclassified via bulk_categorize). 'transfer' is the canonical
+    # source for these rows going forward.
     op.execute(
         "UPDATE transactions SET categorization_source = 'transfer' WHERE is_transfer = true"
     )
