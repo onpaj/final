@@ -9,6 +9,7 @@ import { bulkCategorize } from "../../api/transactions";
 import { buildTransactionContextMenuItems } from "../../utils/transactionContextMenu";
 import client from "../../api/client";
 import ContextMenu from "../../components/ContextMenu";
+import TransactionDetailModal from "../../components/TransactionDetailModal";
 import SlideOverPanel from "../../components/SlideOverPanel";
 import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
@@ -84,6 +85,7 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
   });
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tx: BatchTx } | null>(null);
+  const [detailTxId, setDetailTxId] = useState<string | null>(null);
 
   if (isLoading) return <p className="text-xs text-gray-400">{t("imports.loadingTx")}</p>;
   if (txs.length === 0) return <p className="text-xs text-gray-400">{t("imports.noTxFound")}</p>;
@@ -147,11 +149,13 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
             categoryGroups,
             onCategorize: (ids, categoryId) => categorizeMutation.mutate({ ids, categoryId }),
             onCreateRule,
+            onShowDetails: (id) => setDetailTxId(id),
             t,
           })}
           onClose={() => setContextMenu(null)}
         />
       )}
+      <TransactionDetailModal txId={detailTxId} onClose={() => setDetailTxId(null)} />
     </>
   );
 }
