@@ -55,7 +55,8 @@ async def update_rule(rule_id: uuid.UUID, body: RuleUpdate, db: AsyncSession = D
     rule = await db.get(Rule, rule_id)
     if not rule:
         raise HTTPException(404, "Rule not found")
-    for f, v in body.model_dump(exclude_none=True).items():
+    update_data = {k: v for k, v in body.model_dump().items() if k in body.model_fields_set}
+    for f, v in update_data.items():
         setattr(rule, f, v)
     await db.commit()
     await db.refresh(rule)

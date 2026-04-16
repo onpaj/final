@@ -4,6 +4,7 @@ from decimal import Decimal
 from datetime import date
 from app.services.rules_engine import RulesEngine, RuleMatch
 from app.services.parsers.base import TransactionRow
+from app.services.categorization_service import CategorizationService
 
 def make_tx(**kwargs):
     defaults = dict(
@@ -132,31 +133,27 @@ def make_rule_with_account(match_type, match_value, account_id, category_id=None
     }
 
 def test_account_scoped_rule_matches_correct_account():
-    """A rule with account_id only matches transactions from that account."""
+    """Account-scoped rule only fires for transactions from the matching account."""
     account_a = uuid.uuid4()
     account_b = uuid.uuid4()
     tx = make_tx(counterparty_name="ALBERT")
     rule = make_rule_with_account("counterparty_contains", {"value": "albert"}, account_id=account_a)
 
-    filtered_for_a = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == account_a]
-    filtered_for_b = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == account_b]
-
-    assert RulesEngine.apply(tx, filtered_for_a) is not None
-    assert RulesEngine.apply(tx, filtered_for_b) is None
+    assert RulesEngine.apply(tx, CategorizationService._rules_for_account([rule], account_a)) is not None
+    assert RulesEngine.apply(tx, CategorizationService._rules_for_account([rule], account_b)) is None
 
 def test_global_rule_matches_any_account():
-    """A rule with account_id=None applies to all accounts."""
+    """A rule with no account_id applies to all accounts."""
     account_a = uuid.uuid4()
     account_b = uuid.uuid4()
     tx = make_tx(counterparty_name="ALBERT")
-    rule = make_rule("counterparty_contains", {"value": "albert"})  # no account_id key
+    rule = make_rule("counterparty_contains", {"value": "albert"})
 
     for acct in [account_a, account_b]:
-        filtered = [r for r in [rule] if r.get("account_id") is None or r["account_id"] == acct]
-        assert RulesEngine.apply(tx, filtered) is not None
+        assert RulesEngine.apply(tx, CategorizationService._rules_for_account([rule], acct)) is not None
 
 def test_account_scoped_rule_higher_priority_wins():
-    """Account-specific rule wins over global rule when both match and scoped has higher priority."""
+    """Account-specific rule at higher priority wins over a global rule."""
     account_a = uuid.uuid4()
     cat_specific = uuid.uuid4()
     cat_global = uuid.uuid4()
@@ -165,7 +162,6 @@ def test_account_scoped_rule_higher_priority_wins():
     rule_specific = make_rule_with_account("counterparty_contains", {"value": "albert"}, account_id=account_a, category_id=cat_specific, priority=200)
     rule_global = make_rule("counterparty_contains", {"value": "albert"}, cat_global, priority=100)
 
-    rules = [rule_specific, rule_global]
-    filtered = [r for r in rules if r.get("account_id") is None or r["account_id"] == account_a]
+    filtered = CategorizationService._rules_for_account([rule_specific, rule_global], account_a)
     result = RulesEngine.apply(tx, filtered)
     assert result.category_id == cat_specific
