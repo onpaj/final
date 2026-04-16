@@ -56,6 +56,7 @@ class Transaction(Base):
         Index("ix_transactions_account_booking", "account_id", "booking_date"),
         Index("ix_transactions_category_booking", "category_id", "booking_date"),
         Index("ix_transactions_is_transfer", "is_transfer"),
+        Index("ix_transactions_applied_rule_id", "applied_rule_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -73,6 +74,9 @@ class Transaction(Base):
         UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True
     )
     categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual
+    applied_rule_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rules.id", ondelete="SET NULL"), nullable=True
+    )
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     is_transfer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     transfer_pair_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
@@ -84,6 +88,7 @@ class Transaction(Base):
     account: Mapped["Account"] = relationship(back_populates="transactions")
     import_batch: Mapped["ImportBatch"] = relationship(back_populates="transactions")
     category: Mapped["Category | None"] = relationship(back_populates="transactions", foreign_keys="[Transaction.category_id]")
+    applied_rule: Mapped["Rule | None"] = relationship(foreign_keys="[Transaction.applied_rule_id]")
 
 
 class CategoryGroup(Base):
