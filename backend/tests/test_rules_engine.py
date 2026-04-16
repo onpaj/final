@@ -117,6 +117,9 @@ def test_counterparty_account_equals_case_insensitive():
     assert RulesEngine.apply(tx, [rule]) is not None
 
 
+# Account-scoped filtering happens in categorization_service._rules_for_account(),
+# which pre-filters the rules list before passing it to RulesEngine.apply().
+# The tests below validate this filtering pattern.
 def make_rule_with_account(match_type, match_value, account_id, category_id=None, priority=100):
     return {
         "id": uuid.uuid4(),

@@ -131,7 +131,7 @@ class Rule(Base):
     account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=True
     )
-    account: Mapped["Account | None"] = relationship()
+    account: Mapped["Account | None"] = relationship(foreign_keys="[Rule.account_id]")
 
     category: Mapped["Category"] = relationship(back_populates="rules")
 
