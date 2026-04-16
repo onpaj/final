@@ -7,6 +7,8 @@ import { listCategoryGroups } from "../../api/categories";
 import TransactionTable from "./TransactionTable";
 import CategorySidebar from "./CategorySidebar";
 import TransactionDragOverlay from "./TransactionDragOverlay";
+import SlideOverPanel from "../../components/SlideOverPanel";
+import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
 interface Props {
   categoryId: string;
@@ -26,6 +28,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [assignTarget, setAssignTarget] = useState<string>("");
+  const [rulePrefill, setRulePrefill] = useState<RulePrefill | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -64,7 +67,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
   });
 
   const categorizeMutation = useMutation({
-    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string }) =>
+    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string | null }) =>
       bulkCategorize(ids, categoryId),
     onSuccess: invalidateAndClear,
   });
@@ -171,6 +174,7 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
                 onCategorize={(ids, categoryId) => categorizeMutation.mutate({ ids, categoryId })}
+                onCreateRule={setRulePrefill}
               />
             </div>
             <div className="lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
@@ -185,6 +189,15 @@ export default function CategoryDetail({ categoryId, categoryName, year, month, 
         </DndContext>
       )}
 
+      <SlideOverPanel
+        open={rulePrefill !== null}
+        onClose={() => setRulePrefill(null)}
+        title={t("rules.newRule")}
+      >
+        {rulePrefill && (
+          <RuleForm prefill={rulePrefill} onClose={() => setRulePrefill(null)} />
+        )}
+      </SlideOverPanel>
     </div>
   );
 }

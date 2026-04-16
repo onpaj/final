@@ -4,10 +4,13 @@ import { useTranslation } from "react-i18next";
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
 import { listTransactions, bulkCategorize } from "../../api/transactions";
 import { listCategoryGroups } from "../../api/categories";
+import { listAccounts } from "../../api/accounts";
 import { recategorizeBatch } from "../../api/categorization";
 import TransactionTable from "../Analytics/TransactionTable";
 import CategorySidebar from "../Analytics/CategorySidebar";
 import TransactionDragOverlay from "../Analytics/TransactionDragOverlay";
+import SlideOverPanel from "../../components/SlideOverPanel";
+import RuleForm, { type RulePrefill } from "../Rules/RuleForm";
 
 export default function ReviewPage() {
   const { t } = useTranslation();
@@ -17,6 +20,7 @@ export default function ReviewPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [rulePrefill, setRulePrefill] = useState<RulePrefill | null>(null);
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions", "needs_review", { include_llm_status: true }],
@@ -27,6 +31,13 @@ export default function ReviewPage() {
     queryKey: ["categoryGroups"],
     queryFn: listCategoryGroups,
   });
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: listAccounts,
+  });
+
+  const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
 
   function invalidateAndClear() {
     setSelected(new Set());
@@ -57,7 +68,7 @@ export default function ReviewPage() {
   });
 
   const categorizeMutation = useMutation({
-    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string }) =>
+    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string | null }) =>
       bulkCategorize(ids, categoryId),
     onSuccess: invalidateAndClear,
   });
@@ -99,7 +110,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{t("review.title")}</h1>
         {!isLoading && transactions.length > 0 && (
@@ -161,10 +172,12 @@ export default function ReviewPage() {
                 selected={selected}
                 activeId={activeId}
                 showReasonColumn={true}
+                accountMap={accountMap}
                 categoryGroups={categoryGroups}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
                 onCategorize={(ids, categoryId) => categorizeMutation.mutate({ ids, categoryId })}
+                onCreateRule={setRulePrefill}
               />
             </div>
             <div className="lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
@@ -178,6 +191,16 @@ export default function ReviewPage() {
           <TransactionDragOverlay activeId={activeId} count={selected.size} />
         </DndContext>
       )}
+
+      <SlideOverPanel
+        open={rulePrefill !== null}
+        onClose={() => setRulePrefill(null)}
+        title={t("rules.newRule")}
+      >
+        {rulePrefill && (
+          <RuleForm prefill={rulePrefill} onClose={() => setRulePrefill(null)} />
+        )}
+      </SlideOverPanel>
     </div>
   );
 }
