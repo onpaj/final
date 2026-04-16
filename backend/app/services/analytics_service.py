@@ -36,7 +36,7 @@ class AnalyticsService:
             JOIN categories c ON t.category_id = c.id
             JOIN category_groups cg ON c.group_id = cg.id
             WHERE
-                t.is_transfer = false
+                t.categorization_source IS DISTINCT FROM 'transfer'
                 AND c.is_ignored = false
                 AND EXTRACT(YEAR FROM t.booking_date) = :year
                 AND EXTRACT(MONTH FROM t.booking_date) = :month
@@ -75,7 +75,7 @@ class AnalyticsService:
             SELECT COALESCE(SUM(t.amount), 0) AS total, COUNT(*) AS cnt
             FROM transactions t
             WHERE
-                t.is_transfer = false
+                t.categorization_source IS DISTINCT FROM 'transfer'
                 AND t.category_id IS NULL
                 AND EXTRACT(YEAR FROM t.booking_date) = :year
                 AND EXTRACT(MONTH FROM t.booking_date) = :month
@@ -125,7 +125,7 @@ class AnalyticsService:
             JOIN categories c ON t.category_id = c.id
             JOIN category_groups cg ON c.group_id = cg.id
             WHERE
-                t.is_transfer = false
+                t.categorization_source IS DISTINCT FROM 'transfer'
                 AND c.is_ignored = false
                 AND (EXTRACT(YEAR FROM t.booking_date) * 100 + EXTRACT(MONTH FROM t.booking_date))
                     BETWEEN :from_ym AND :to_ym
@@ -164,7 +164,7 @@ class AnalyticsService:
                 JOIN categories c ON t.category_id = c.id
                 JOIN category_groups cg ON c.group_id = cg.id
                 WHERE
-                    t.is_transfer = false
+                    t.categorization_source IS DISTINCT FROM 'transfer'
                     AND c.is_income = false
                     AND c.is_ignored = false
                     AND (EXTRACT(YEAR FROM t.booking_date) * 100 + EXTRACT(MONTH FROM t.booking_date))
