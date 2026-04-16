@@ -196,3 +196,29 @@ class CategorizationService:
 
         await self._db.commit()
         return {"categorized": categorized, "needs_review": needs_review}
+
+    async def recategorize_rule_affected(self, rule_id: uuid.UUID) -> int:
+        """Find transactions matched by rule_id, clear their categorization, re-run all rules."""
+        result = await self._db.execute(
+            select(Transaction).where(Transaction.applied_rule_id == rule_id)
+        )
+        transactions = result.scalars().all()
+        if not transactions:
+            return 0
+
+        # Clear existing rule-based assignment
+        for tx in transactions:
+            tx.category_id = None
+            tx.categorization_source = None
+            tx.confidence = None
+            tx.applied_rule_id = None
+
+        # Flush so the re-run sees them as uncategorized
+        await self._db.flush()
+
+        rules = await self._load_rules()
+        for tx in transactions:
+            await self._categorize_one_rules_only(tx, rules)
+
+        await self._db.commit()
+        return len(transactions)

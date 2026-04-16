@@ -165,3 +165,16 @@ def test_account_scoped_rule_higher_priority_wins():
     filtered = CategorizationService._rules_for_account([rule_specific, rule_global], account_a)
     result = RulesEngine.apply(tx, filtered)
     assert result.category_id == cat_specific
+
+def test_rule_match_returns_rule_id():
+    """RulesEngine.apply returns the matched rule's id in RuleMatch."""
+    rule_id = uuid.uuid4()
+    cat_id = uuid.uuid4()
+    tx = make_tx(counterparty_name="ALBERT")
+    rule = {"id": rule_id, "match_type": "counterparty_contains",
+            "match_value": {"value": "albert"}, "category_id": cat_id,
+            "priority": 100, "enabled": True}
+    result = RulesEngine.apply(tx, [rule])
+    assert result is not None
+    assert result.rule_id == rule_id
+    assert result.category_id == cat_id
