@@ -63,6 +63,7 @@ class TransferPairOut(BaseModel):
     amount: Decimal
     booking_date: date
     account: AccountRef
+    model_config = {"from_attributes": True}
 
 
 class TransactionDetailOut(BaseModel):
