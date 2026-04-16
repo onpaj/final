@@ -209,5 +209,24 @@
     "stepLlm": "LLM",
     "selectedCount": "{{count}} selected",
     "runError": "Action failed"
+  },
+  "transaction": {
+    "showDetails": "Show details",
+    "detailTitle": "Transaction Details",
+    "loadError": "Failed to load transaction details.",
+    "sectionTransaction": "Transaction",
+    "sectionCategorization": "Categorization",
+    "ownAccount": "Own account",
+    "valueDate": "Value date",
+    "rawReference": "Reference",
+    "transferPair": "Transfer pair",
+    "uncategorized": "Uncategorized",
+    "categorizationSource": "Source",
+    "source_rule": "Rule",
+    "source_llm": "LLM",
+    "source_manual": "Manual",
+    "appliedRule": "Applied rule",
+    "confidence": "Confidence",
+    "txAccount": "Account"
   }
 }

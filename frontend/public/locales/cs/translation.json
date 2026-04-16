@@ -209,5 +209,24 @@
     "stepLlm": "LLM",
     "selectedCount": "{{count}} vybráno",
     "runError": "Akce selhala"
+  },
+  "transaction": {
+    "showDetails": "Zobrazit detail",
+    "detailTitle": "Detail transakce",
+    "loadError": "Nepodařilo se načíst detail transakce.",
+    "sectionTransaction": "Transakce",
+    "sectionCategorization": "Kategorizace",
+    "ownAccount": "Vlastní účet",
+    "valueDate": "Datum valuty",
+    "rawReference": "Reference",
+    "transferPair": "Párová transakce",
+    "uncategorized": "Bez kategorie",
+    "categorizationSource": "Zdroj",
+    "source_rule": "Pravidlo",
+    "source_llm": "LLM",
+    "source_manual": "Ručně",
+    "appliedRule": "Použité pravidlo",
+    "confidence": "Spolehlivost",
+    "txAccount": "Účet"
   }
 }
