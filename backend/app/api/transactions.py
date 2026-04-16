@@ -225,3 +225,67 @@ async def bulk_categorize(body: BulkCategorizeRequest, db: AsyncSession = Depend
         .values(**values)
     )
     await db.commit()
+
+
+@router.get("/{transaction_id}/details", response_model=TransactionDetailOut)
+async def get_transaction_details(
+    transaction_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> TransactionDetailOut:
+    result = await db.execute(select(Transaction).where(Transaction.id == transaction_id))
+    tx = result.scalars().first()
+    if tx is None:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    result = await db.execute(select(Account).where(Account.id == tx.account_id))
+    account = result.scalars().first()
+
+    category = None
+    if tx.category_id is not None:
+        result = await db.execute(select(Category).where(Category.id == tx.category_id))
+        category = result.scalars().first()
+
+    applied_rule = None
+    if tx.applied_rule_id is not None:
+        result = await db.execute(select(Rule).where(Rule.id == tx.applied_rule_id))
+        applied_rule = result.scalars().first()
+
+    transfer_pair = None
+    if tx.is_transfer and tx.transfer_pair_id is not None:
+        result = await db.execute(select(Transaction).where(Transaction.id == tx.transfer_pair_id))
+        pair_tx = result.scalars().first()
+        if pair_tx is not None:
+            result = await db.execute(select(Account).where(Account.id == pair_tx.account_id))
+            pair_account = result.scalars().first()
+            transfer_pair = TransferPairOut(
+                id=pair_tx.id,
+                amount=pair_tx.amount,
+                booking_date=pair_tx.booking_date,
+                account=AccountRef(
+                    id=pair_account.id,
+                    name=pair_account.name,
+                    iban=pair_account.iban,
+                ),
+            )
+
+    return TransactionDetailOut(
+        id=tx.id,
+        booking_date=tx.booking_date,
+        value_date=tx.value_date,
+        amount=tx.amount,
+        currency=tx.currency,
+        counterparty_name=tx.counterparty_name,
+        counterparty_account=tx.counterparty_account,
+        description=tx.description,
+        raw_reference=tx.raw_reference,
+        is_transfer=tx.is_transfer,
+        transfer_pair_id=tx.transfer_pair_id,
+        categorization_source=tx.categorization_source,
+        confidence=tx.confidence,
+        created_at=tx.created_at,
+        import_batch_id=tx.import_batch_id,
+        account=AccountRef(id=account.id, name=account.name, iban=account.iban),
+        category=CategoryRef(id=category.id, name=category.name) if category else None,
+        applied_rule=RuleRef(id=applied_rule.id, name=applied_rule.name) if applied_rule else None,
+        transfer_pair=transfer_pair,
+    )

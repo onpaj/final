@@ -212,3 +212,49 @@ async def test_include_llm_status_false_by_default(client, mock_db):
     assert resp.status_code == 200
     assert mock_db.execute.call_count == 1
     assert resp.json()[0]["llm_status"] is None
+
+
+def _make_account(account_id: uuid.UUID | None = None) -> MagicMock:
+    from app.db.models import Account as AccountModel
+    acc = MagicMock(spec=AccountModel)
+    acc.id = account_id or uuid.uuid4()
+    acc.name = "My Account"
+    acc.iban = "CZ6508000000192000145399"
+    return acc
+
+
+async def test_get_transaction_details_not_found(client, mock_db):
+    empty_result = MagicMock()
+    empty_result.scalars.return_value.first.return_value = None
+    mock_db.execute.return_value = empty_result
+    async with client as c:
+        resp = await c.get(f"/api/transactions/{uuid.uuid4()}/details")
+    assert resp.status_code == 404
+
+
+async def test_get_transaction_details_basic(client, mock_db):
+    tx = _make_transaction()
+    tx.value_date = None
+    tx.raw_reference = None
+    tx.is_transfer = False
+    tx.transfer_pair_id = None
+    tx.category_id = None
+    tx.applied_rule_id = None
+    acc = _make_account(tx.account_id)
+
+    tx_result = MagicMock()
+    tx_result.scalars.return_value.first.return_value = tx
+    acc_result = MagicMock()
+    acc_result.scalars.return_value.first.return_value = acc
+
+    mock_db.execute.side_effect = [tx_result, acc_result]
+
+    async with client as c:
+        resp = await c.get(f"/api/transactions/{tx.id}/details")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == str(tx.id)
+    assert data["account"]["name"] == "My Account"
+    assert data["category"] is None
+    assert data["applied_rule"] is None
+    assert data["transfer_pair"] is None
