@@ -73,7 +73,7 @@ class Transaction(Base):
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), nullable=True
     )
-    categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual
+    categorization_source: Mapped[str | None] = mapped_column(String, nullable=True)  # rule | llm | manual | transfer
     applied_rule_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("rules.id", ondelete="CASCADE"), nullable=True
     )
