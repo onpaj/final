@@ -21,6 +21,7 @@ export default function ReviewPage() {
   const [overId, setOverId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [rulePrefill, setRulePrefill] = useState<RulePrefill | null>(null);
+  const [steps, setSteps] = useState({ transfers: true, rules: true, llm: false });
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions", "needs_review", { include_llm_status: true }],
@@ -55,14 +56,10 @@ export default function ReviewPage() {
     },
   });
 
-  const runRulesMutation = useMutation({
-    mutationFn: () => recategorizeBatch(Array.from(selected), "rules"),
-    onSuccess: invalidateAndClear,
-    onError: () => setActionError(t("review.runError")),
-  });
+  const activeSteps = (["transfers", "rules", "llm"] as const).filter((s) => steps[s]);
 
-  const runLlmMutation = useMutation({
-    mutationFn: () => recategorizeBatch(Array.from(selected), "llm"),
+  const runClassificationMutation = useMutation({
+    mutationFn: () => recategorizeBatch(Array.from(selected), activeSteps),
     onSuccess: invalidateAndClear,
     onError: () => setActionError(t("review.runError")),
   });
@@ -72,8 +69,6 @@ export default function ReviewPage() {
       bulkCategorize(ids, categoryId),
     onSuccess: invalidateAndClear,
   });
-
-  const isActing = runRulesMutation.isPending || runLlmMutation.isPending;
 
   function toggleRow(id: string) {
     setSelected((prev) => {
@@ -120,44 +115,44 @@ export default function ReviewPage() {
         )}
       </div>
 
-      {selected.size > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => runRulesMutation.mutate()}
-              disabled={isActing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {runRulesMutation.isPending && (
-                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-              )}
-              {t("review.runRules")}
-            </button>
-            <button
-              onClick={() => runLlmMutation.mutate()}
-              disabled={isActing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {runLlmMutation.isPending && (
-                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-              )}
-              {t("review.runLlm")}
-            </button>
+      <div className="mb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {(["transfers", "rules", "llm"] as const).map((step) => (
+              <label key={step} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={steps[step]}
+                  onChange={(e) => setSteps((prev) => ({ ...prev, [step]: e.target.checked }))}
+                  className="rounded border-gray-300 text-blue-600"
+                />
+                {t(`review.step${step.charAt(0).toUpperCase() + step.slice(1)}`)}
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={() => runClassificationMutation.mutate()}
+            disabled={activeSteps.length === 0 || runClassificationMutation.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {runClassificationMutation.isPending && (
+              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            )}
+            {t("review.runClassification")}
+          </button>
+          {selected.size > 0 && (
             <span className="text-sm text-gray-500">
               {t("review.selectedCount", { count: selected.size })}
             </span>
-          </div>
-          {actionError && (
-            <p className="mt-1 text-sm text-red-600">{actionError}</p>
           )}
         </div>
-      )}
+        {actionError && (
+          <p className="mt-1 text-sm text-red-600">{actionError}</p>
+        )}
+      </div>
 
       {isLoading ? (
         <p className="text-gray-400 text-sm">{t("common.loading")}</p>
