@@ -26,7 +26,6 @@ def _make_transaction(account_id: uuid.UUID | None = None) -> Transaction:
     tx.category_id = None
     tx.categorization_source = None
     tx.confidence = None
-    tx.is_transfer = False
     tx.notes = None
     tx.created_at = datetime(2026, 1, 15, 10, 0, 0)
     tx.raw_reference = None
@@ -106,18 +105,18 @@ async def test_list_transactions_needs_review_filter(client, mock_db):
     call_arg = mock_db.execute.call_args[0][0]
     query_str = str(call_arg).lower()
     assert "category_id" in query_str
-    assert "is_transfer" in query_str
+    assert "categorization_source" in query_str
 
 
-async def test_list_transactions_is_transfer_filter(client, mock_db):
+async def test_list_transactions_categorization_source_filter(client, mock_db):
     mock_result = MagicMock()
     mock_result.scalars.return_value.all.return_value = []
     mock_db.execute.return_value = mock_result
     async with client as c:
-        resp = await c.get("/api/transactions?is_transfer=false")
+        resp = await c.get("/api/transactions?categorization_source=transfer")
     assert resp.status_code == 200
     call_arg = mock_db.execute.call_args[0][0]
-    assert "is_transfer" in str(call_arg).lower()
+    assert "categorization_source" in str(call_arg).lower()
 
 
 async def test_list_transactions_limit_capped_at_500(client, mock_db):
@@ -237,7 +236,6 @@ async def test_get_transaction_details_not_found(client, mock_db):
 async def test_get_transaction_details_basic(client, mock_db):
     tx = _make_transaction()
     tx.value_date = None
-    tx.is_transfer = False
     tx.transfer_pair_id = None
     tx.category_id = None
     acc = _make_account(tx.account_id)
@@ -263,7 +261,7 @@ async def test_get_transaction_details_basic(client, mock_db):
 async def test_get_transaction_details_with_transfer_pair(client, mock_db):
     tx = _make_transaction()
     tx.value_date = None
-    tx.is_transfer = True
+    tx.categorization_source = "transfer"
     pair_id = uuid.uuid4()
     tx.transfer_pair_id = pair_id
     tx.category_id = None

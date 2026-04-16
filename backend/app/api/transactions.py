@@ -31,7 +31,6 @@ class TransactionOut(BaseModel):
     category_id: uuid.UUID | None
     categorization_source: str | None
     confidence: Decimal | None
-    is_transfer: bool
     notes: str | None
     created_at: datetime
     llm_status: Literal["no_rule_no_llm", "llm_rejected", "llm_error"] | None = None
@@ -76,7 +75,6 @@ class TransactionDetailOut(BaseModel):
     counterparty_account: str | None
     description: str | None
     raw_reference: str | None
-    is_transfer: bool
     transfer_pair_id: uuid.UUID | None
     categorization_source: str | None
     confidence: Decimal | None
@@ -98,7 +96,7 @@ async def export_csv(
     needs_review: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(Transaction).order_by(Transaction.booking_date.desc())
+    q = select(Transaction).order_by(Transaction.booking_date.desc(), Transaction.id.desc())
     if account_id:
         q = q.where(Transaction.account_id == account_id)
     if date_from:
@@ -109,20 +107,22 @@ async def export_csv(
         q = q.where(Transaction.category_id == category_id)
     if needs_review is True:
         q = q.where(Transaction.category_id.is_(None))
-        q = q.where(Transaction.is_transfer.is_(False))
+        q = q.where(
+            (Transaction.categorization_source.is_(None)) |
+            (Transaction.categorization_source != "transfer")
+        )
     result = await db.execute(q)
     transactions = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["date", "amount", "currency", "counterparty", "description",
-                     "category_id", "source", "is_transfer"])
+                     "category_id", "source"])
     for tx in transactions:
         writer.writerow([
             tx.booking_date, tx.amount, tx.currency,
             tx.counterparty_name or "", tx.description or "",
             tx.category_id or "", tx.categorization_source or "",
-            tx.is_transfer,
         ])
 
     output.seek(0)
@@ -140,7 +140,7 @@ async def list_transactions(
     date_to: date | None = Query(None),
     category_id: uuid.UUID | None = Query(None),
     needs_review: bool | None = Query(None),
-    is_transfer: bool | None = Query(None),
+    categorization_source: str | None = Query(None),
     include_llm_status: bool = Query(False),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -158,9 +158,12 @@ async def list_transactions(
         query = query.where(Transaction.category_id == category_id)
     if needs_review is True:
         query = query.where(Transaction.category_id.is_(None))
-        query = query.where(Transaction.is_transfer.is_(False))
-    if is_transfer is not None:
-        query = query.where(Transaction.is_transfer.is_(is_transfer))
+        query = query.where(
+            (Transaction.categorization_source.is_(None)) |
+            (Transaction.categorization_source != "transfer")
+        )
+    if categorization_source is not None:
+        query = query.where(Transaction.categorization_source == categorization_source)
 
     query = query.order_by(Transaction.booking_date.desc(), Transaction.id.desc())
     query = query.limit(limit).offset(offset)
@@ -213,17 +216,42 @@ async def bulk_categorize(body: BulkCategorizeRequest, db: AsyncSession = Depend
             categorization_source="manual",
             confidence=None,
         )
-    else:
-        values = dict(
-            category_id=None,
-            categorization_source=None,
-            confidence=None,
+        await db.execute(
+            Transaction.__table__.update()
+            .where(Transaction.id.in_(body.transaction_ids))
+            .values(**values)
         )
-    await db.execute(
-        Transaction.__table__.update()
-        .where(Transaction.id.in_(body.transaction_ids))
-        .values(**values)
-    )
+    else:
+        # Collect transfer_pair_ids before clearing so we can reset the paired side too
+        pair_result = await db.execute(
+            select(Transaction.transfer_pair_id)
+            .where(Transaction.id.in_(body.transaction_ids))
+            .where(Transaction.transfer_pair_id.is_not(None))
+        )
+        pair_ids = [row[0] for row in pair_result.all()]
+
+        await db.execute(
+            Transaction.__table__.update()
+            .where(Transaction.id.in_(body.transaction_ids))
+            .values(
+                category_id=None,
+                categorization_source=None,
+                confidence=None,
+                transfer_pair_id=None,
+            )
+        )
+
+        if pair_ids:
+            await db.execute(
+                Transaction.__table__.update()
+                .where(Transaction.id.in_(pair_ids))
+                .values(
+                    category_id=None,
+                    categorization_source=None,
+                    confidence=None,
+                    transfer_pair_id=None,
+                )
+            )
     await db.commit()
 
 
@@ -253,7 +281,7 @@ async def get_transaction_details(
         applied_rule = result.scalars().first()
 
     transfer_pair = None
-    if tx.is_transfer and tx.transfer_pair_id is not None:
+    if tx.categorization_source == "transfer" and tx.transfer_pair_id is not None:
         result = await db.execute(select(Transaction).where(Transaction.id == tx.transfer_pair_id))
         pair_tx = result.scalars().first()
         if pair_tx is not None:
@@ -282,7 +310,6 @@ async def get_transaction_details(
         counterparty_account=tx.counterparty_account,
         description=tx.description,
         raw_reference=tx.raw_reference,
-        is_transfer=tx.is_transfer,
         transfer_pair_id=tx.transfer_pair_id,
         categorization_source=tx.categorization_source,
         confidence=tx.confidence,
