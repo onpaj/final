@@ -25,6 +25,7 @@ export default function TransactionDetailModal({ txId, onClose }: Props) {
     queryKey: ["transaction", "details", txId],
     queryFn: () => getTransactionDetails(txId!),
     enabled: txId !== null,
+    staleTime: 5 * 60 * 1000,
   });
 
   return (

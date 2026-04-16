@@ -226,7 +226,6 @@
     "source_llm": "LLM",
     "source_manual": "Ručně",
     "appliedRule": "Použité pravidlo",
-    "confidence": "Spolehlivost",
-    "txAccount": "Účet"
+    "confidence": "Spolehlivost"
   }
 }

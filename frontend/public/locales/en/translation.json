@@ -226,7 +226,6 @@
     "source_llm": "LLM",
     "source_manual": "Manual",
     "appliedRule": "Applied rule",
-    "confidence": "Confidence",
-    "txAccount": "Account"
+    "confidence": "Confidence"
   }
 }

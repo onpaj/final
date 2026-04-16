@@ -258,3 +258,34 @@ async def test_get_transaction_details_basic(client, mock_db):
     assert data["category"] is None
     assert data["applied_rule"] is None
     assert data["transfer_pair"] is None
+
+
+async def test_get_transaction_details_with_transfer_pair(client, mock_db):
+    tx = _make_transaction()
+    tx.value_date = None
+    tx.is_transfer = True
+    pair_id = uuid.uuid4()
+    tx.transfer_pair_id = pair_id
+    tx.category_id = None
+
+    pair_tx = _make_transaction()
+    pair_tx.id = pair_id
+    pair_account = _make_account()
+
+    tx_result = MagicMock()
+    tx_result.scalars.return_value.first.return_value = tx
+    acc_result = MagicMock()
+    acc_result.scalars.return_value.first.return_value = _make_account(tx.account_id)
+    pair_tx_result = MagicMock()
+    pair_tx_result.scalars.return_value.first.return_value = pair_tx
+    pair_acc_result = MagicMock()
+    pair_acc_result.scalars.return_value.first.return_value = pair_account
+
+    mock_db.execute.side_effect = [tx_result, acc_result, pair_tx_result, pair_acc_result]
+
+    async with client as c:
+        resp = await c.get(f"/api/transactions/{tx.id}/details")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["transfer_pair"] is not None
+    assert data["transfer_pair"]["account"]["name"] == "My Account"
