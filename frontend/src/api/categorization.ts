@@ -15,11 +15,11 @@ export async function runBatchClassification(): Promise<BatchClassificationResul
 
 export async function recategorizeBatch(
   transaction_ids: string[],
-  mode: "rules" | "llm" | "full",
+  steps: string[],
 ): Promise<BatchClassificationResult> {
   const { data } = await client.post<BatchClassificationResult>(
     "/api/categorize/batch",
-    { transaction_ids, mode },
+    { transaction_ids, steps },
   );
   return data;
 }
