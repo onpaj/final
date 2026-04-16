@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models import Rule
+from app.services.categorization_service import CategorizationService
 
 router = APIRouter()
 
@@ -37,6 +38,8 @@ class RuleOut(BaseModel):
     hit_count: int
     model_config = {"from_attributes": True}
 
+_RECATEGORIZE_FIELDS = {"match_type", "match_value", "category_id", "account_id", "enabled"}
+
 @router.get("", response_model=list[RuleOut])
 async def list_rules(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Rule).order_by(Rule.priority.desc()))
@@ -56,6 +59,9 @@ async def update_rule(rule_id: uuid.UUID, body: RuleUpdate, db: AsyncSession = D
     if not rule:
         raise HTTPException(404, "Rule not found")
     update_data = {k: v for k, v in body.model_dump().items() if k in body.model_fields_set}
+    if update_data.keys() & _RECATEGORIZE_FIELDS:
+        svc = CategorizationService(db)
+        await svc.recategorize_rule_affected(rule_id)
     for f, v in update_data.items():
         setattr(rule, f, v)
     await db.commit()
@@ -67,5 +73,7 @@ async def delete_rule(rule_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     rule = await db.get(Rule, rule_id)
     if not rule:
         raise HTTPException(404, "Rule not found")
+    svc = CategorizationService(db)
+    await svc.recategorize_rule_affected(rule_id)
     await db.delete(rule)
     await db.commit()
