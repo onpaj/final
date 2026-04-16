@@ -65,7 +65,7 @@ class TransferMatcher:
                     Transaction.amount <= debit_abs + AMOUNT_TOLERANCE,
                     Transaction.booking_date >= date_min,
                     Transaction.booking_date <= date_max,
-                    Transaction.is_transfer == False,
+                    Transaction.categorization_source.is_(None),
                 )
             )
         )
@@ -97,7 +97,7 @@ class TransferMatcher:
             select(Transaction).where(
                 Transaction.id.in_(transaction_ids),
                 Transaction.amount < 0,
-                Transaction.is_transfer == False,
+                Transaction.categorization_source.is_(None),
             )
         )
         debits = result.scalars().all()
@@ -108,10 +108,10 @@ class TransferMatcher:
             credit = await self._find_match(debit)
             if credit:
                 pair_id = uuid.uuid4()
-                debit.is_transfer = True
+                debit.categorization_source = "transfer"
                 debit.transfer_pair_id = pair_id
                 debit.category_id = internal_cat_id
-                credit.is_transfer = True
+                credit.categorization_source = "transfer"
                 credit.transfer_pair_id = pair_id
                 credit.category_id = internal_cat_id
                 matched += 1

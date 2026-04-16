@@ -17,7 +17,7 @@ def make_tx(amount, booking_date, account_id=None, tx_id=None, counterparty_acco
     tx.amount = Decimal(str(amount))
     tx.booking_date = booking_date
     tx.account_id = account_id or uuid.uuid4()
-    tx.is_transfer = False
+    tx.categorization_source = None
     tx.transfer_pair_id = None
     tx.category_id = None
     tx.counterparty_account = counterparty_account
@@ -184,3 +184,54 @@ async def test_no_match_different_amount():
     matcher._account_identifiers = {acct_a: account_identifiers(IBAN_A)}
     result = await matcher._find_match(debit)
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_match_batch_sets_categorization_source():
+    """match_batch sets categorization_source='transfer' instead of is_transfer."""
+    acct_a, acct_b = uuid.uuid4(), uuid.uuid4()
+    internal_cat_id = uuid.uuid4()
+
+    debit = make_tx(-5000, date(2026, 1, 15), acct_a, counterparty_account=IBAN_B)
+    credit = make_tx(5000, date(2026, 1, 16), acct_b, counterparty_account=IBAN_A)
+
+    cat = MagicMock()
+    cat.id = internal_cat_id
+
+    call_count = 0
+    async def mock_execute(query):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:  # _load_account_identifiers
+            acc_a = MagicMock(); acc_a.id = acct_a; acc_a.iban = IBAN_A
+            acc_b = MagicMock(); acc_b.id = acct_b; acc_b.iban = IBAN_B
+            return MagicMock(**{"scalars.return_value.all.return_value": [acc_a, acc_b]})
+        elif call_count == 2:  # fetch debits (amount < 0, categorization_source is None)
+            return MagicMock(**{"scalars.return_value.all.return_value": [debit]})
+        elif call_count == 3:  # _get_internal_transfer_category
+            return MagicMock(scalar_one_or_none=MagicMock(return_value=cat))
+        elif call_count == 4:  # _find_match: fetch candidates
+            result = MagicMock()
+            result.scalars.return_value.all.return_value = [credit]
+            return result
+        else:
+            return MagicMock(scalar_one_or_none=MagicMock(return_value=None))
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(side_effect=mock_execute)
+    mock_db.commit = AsyncMock()
+
+    matcher = TransferMatcher(mock_db)
+    matched = await matcher.match_batch([debit.id, credit.id])
+
+    # Verify match occurred
+    assert matched == 1
+    # Verify categorization_source is set
+    assert debit.categorization_source == "transfer"
+    assert credit.categorization_source == "transfer"
+    assert debit.category_id == internal_cat_id
+    assert credit.category_id == internal_cat_id
+    # Verify pair_id is set
+    assert debit.transfer_pair_id is not None
+    assert credit.transfer_pair_id is not None
+    assert debit.transfer_pair_id == credit.transfer_pair_id
