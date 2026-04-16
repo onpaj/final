@@ -12,7 +12,7 @@ router = APIRouter()
 
 class RecategorizeRequest(BaseModel):
     transaction_ids: list[uuid.UUID] | None = None
-    mode: Literal["rules", "llm", "full"] = "full"
+    steps: list[Literal["transfers", "rules", "llm"]] = ["transfers", "rules", "llm"]
 
 class RecategorizeResult(BaseModel):
     categorized: int
@@ -28,4 +28,4 @@ async def recategorize_batch(body: RecategorizeRequest, db: AsyncSession = Depen
         )
         ids = [r[0] for r in result.all()]
     service = CategorizationService(db)
-    return await service.run_batch(ids, mode=body.mode)
+    return await service.run_batch(ids, steps=body.steps)

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import Category, CategoryGroup, LlmClassification, Rule, Transaction
 from app.services.parsers.base import TransactionRow
 from app.services.rules_engine import RulesEngine
+from app.services.transfer_matcher import TransferMatcher
 from app.services.anthropic_client import AnthropicClient, CONFIDENCE_THRESHOLD, AnthropicClassificationError
 
 logger = logging.getLogger(__name__)
@@ -170,32 +171,39 @@ class CategorizationService:
     async def _categorize_one_llm_only(self, tx: Transaction, categories: list[tuple[str, str, str | None]]) -> None:
         await self._apply_llm(tx, categories)
 
-    async def run_batch(self, transaction_ids: list, mode: str = "full") -> dict:
+    async def run_batch(self, transaction_ids: list, steps: list[str] | None = None) -> dict:
+        if steps is None:
+            steps = ["transfers", "rules", "llm"]
+
+        if "transfers" in steps:
+            await TransferMatcher(self._db).match_batch(transaction_ids)
+
         result = await self._db.execute(
             select(Transaction).where(Transaction.id.in_(transaction_ids))
         )
         transactions = result.scalars().all()
 
-        rules = await self._load_rules() if mode in ("rules", "full") else []
-        categories = await self._load_categories() if mode in ("llm", "full") else []
+        do_rules = "rules" in steps
+        do_llm = "llm" in steps
 
-        categorized = 0
-        needs_review = 0
-        for tx in transactions:
-            if tx.category_id is not None:
-                continue
-            if mode == "rules":
-                await self._categorize_one_rules_only(tx, rules)
-            elif mode == "llm":
-                await self._categorize_one_llm_only(tx, categories)
-            else:
-                await self._categorize_one(tx, rules, categories)
-            if tx.category_id is not None:
-                categorized += 1
-            else:
-                needs_review += 1
+        if do_rules or do_llm:
+            rules = await self._load_rules() if do_rules else []
+            categories = await self._load_categories() if do_llm else []
 
-        await self._db.commit()
+            for tx in transactions:
+                if tx.category_id is not None:
+                    continue
+                if do_rules and do_llm:
+                    await self._categorize_one(tx, rules, categories)
+                elif do_rules:
+                    await self._categorize_one_rules_only(tx, rules)
+                else:
+                    await self._categorize_one_llm_only(tx, categories)
+
+            await self._db.commit()
+
+        categorized = sum(1 for tx in transactions if tx.category_id is not None)
+        needs_review = sum(1 for tx in transactions if tx.category_id is None)
         return {"categorized": categorized, "needs_review": needs_review}
 
     async def recategorize_rule_affected(self, rule_id: uuid.UUID) -> int:
