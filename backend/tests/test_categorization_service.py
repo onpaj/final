@@ -268,8 +268,30 @@ async def test_run_batch_rules_mode_does_not_call_llm():
         service = CategorizationService(mock_db)
         service._load_rules = AsyncMock(return_value=[])
         service._load_categories = AsyncMock(return_value=[])
-        result = await service.run_batch([tx.id], mode="rules")
+        result = await service.run_batch([tx.id], steps=["rules"])
         MockLLM.return_value.classify.assert_not_called()
 
     assert result["needs_review"] == 1
     assert result["categorized"] == 0
+
+
+async def test_run_batch_transfers_step_calls_transfer_matcher():
+    """run_batch with steps=['transfers'] calls TransferMatcher.match_batch and skips categorization."""
+    tx_id = uuid.uuid4()
+    tx = MagicMock()
+    tx.id = tx_id
+    tx.category_id = None
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(
+        return_value=MagicMock(scalars=lambda: MagicMock(all=lambda: [tx]))
+    )
+    mock_db.commit = AsyncMock()
+
+    with patch("app.services.categorization_service.TransferMatcher") as MockMatcher, \
+         patch("app.services.categorization_service.AnthropicClient"):
+        MockMatcher.return_value.match_batch = AsyncMock(return_value=0)
+        service = CategorizationService(mock_db)
+        await service.run_batch([tx_id], steps=["transfers"])
+        MockMatcher.assert_called_once_with(mock_db)
+        MockMatcher.return_value.match_batch.assert_called_once_with([tx_id])
