@@ -39,3 +39,41 @@ export async function bulkCategorize(
     category_id,
   });
 }
+
+export interface AccountRef {
+  id: string;
+  name: string;
+  iban: string | null;
+}
+
+export interface TransactionDetail {
+  id: string;
+  booking_date: string;
+  value_date: string | null;
+  amount: number;
+  currency: string;
+  counterparty_name: string | null;
+  counterparty_account: string | null;
+  description: string | null;
+  raw_reference: string | null;
+  is_transfer: boolean;
+  transfer_pair_id: string | null;
+  categorization_source: string | null;
+  confidence: number | null;
+  created_at: string;
+  import_batch_id: string;
+  account: AccountRef;
+  category: { id: string; name: string } | null;
+  applied_rule: { id: string; name: string } | null;
+  transfer_pair: {
+    id: string;
+    amount: number;
+    booking_date: string;
+    account: AccountRef;
+  } | null;
+}
+
+export async function getTransactionDetails(id: string): Promise<TransactionDetail> {
+  const { data } = await client.get<TransactionDetail>(`/api/transactions/${id}/details`);
+  return data;
+}
