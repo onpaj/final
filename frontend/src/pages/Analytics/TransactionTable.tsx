@@ -3,7 +3,10 @@ import { useDraggable } from "@dnd-kit/core";
 import { useTranslation } from "react-i18next";
 import type { Transaction } from "../../api/transactions";
 import type { CategoryGroup } from "../../api/categories";
+import type { RulePrefill } from "../Rules/RuleForm";
 import ContextMenu from "../../components/ContextMenu";
+import { formatCzechIban } from "../../utils/formatIban";
+import { buildTransactionContextMenuItems } from "../../utils/transactionContextMenu";
 
 function ReasonBadge({ tx }: { tx: Transaction }) {
   const { t } = useTranslation();
@@ -70,7 +73,7 @@ function DraggableRow({ transaction: tx, isChecked, isDragActive, showReasonColu
       </td>
       <td className="px-4 py-2.5 text-gray-500">{tx.booking_date}</td>
       <td className="px-4 py-2.5 font-medium">{tx.counterparty_name || "—"}</td>
-      <td className="px-4 py-2.5 text-gray-500 text-xs font-mono">{tx.counterparty_account || "—"}</td>
+      <td className="px-4 py-2.5 text-gray-500 text-xs font-mono">{tx.counterparty_account ? formatCzechIban(tx.counterparty_account) : "—"}</td>
       <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.description || "—"}</td>
       <td className={`px-4 py-2.5 font-medium ${tx.amount < 0 ? "text-red-500" : "text-green-600"}`}>
         {Number(tx.amount).toLocaleString("cs-CZ")} CZK
@@ -96,7 +99,8 @@ interface Props {
   categoryGroups?: CategoryGroup[];
   onToggleRow: (id: string) => void;
   onToggleAll: () => void;
-  onCategorize?: (transactionIds: string[], categoryId: string) => void;
+  onCategorize?: (transactionIds: string[], categoryId: string | null) => void;
+  onCreateRule?: (prefill: RulePrefill) => void;
 }
 
 export default function TransactionTable({
@@ -109,6 +113,7 @@ export default function TransactionTable({
   onToggleRow,
   onToggleAll,
   onCategorize,
+  onCreateRule,
 }: Props) {
   const { t } = useTranslation();
   const allSelected = transactions.length > 0 && selected.size === transactions.length;
@@ -119,20 +124,19 @@ export default function TransactionTable({
     setContextMenu({ x: e.clientX, y: e.clientY, txId });
   }
 
-  const categoryMenuItems = categoryGroups
-    ? categoryGroups.flatMap((group) => [
-        { label: `__header__${group.name}` },
-        ...(group.categories ?? []).map((cat) => ({
-          label: cat.name,
-          onClick: () => {
-            if (!contextMenu) return;
-            const ids = selected.size > 0 ? Array.from(selected) : [contextMenu.txId];
-            onCategorize?.(ids, cat.id);
-            setContextMenu(null);
-          },
-        })),
-      ])
-    : [];
+  const contextTx = contextMenu ? transactions.find((tx) => tx.id === contextMenu.txId) : null;
+
+  const contextMenuItems =
+    contextTx && categoryGroups && onCategorize && onCreateRule
+      ? buildTransactionContextMenuItems({
+          tx: contextTx,
+          selectedIds: selected.size > 0 ? Array.from(selected) : [contextMenu!.txId],
+          categoryGroups,
+          onCategorize,
+          onCreateRule,
+          t,
+        })
+      : [];
 
   return (
     <>
@@ -179,11 +183,11 @@ export default function TransactionTable({
           <p className="px-4 py-8 text-center text-gray-400 text-sm">{t("analytics.noTransactions")}</p>
         )}
       </div>
-      {contextMenu && categoryGroups && (
+      {contextMenu && contextMenuItems.length > 0 && (
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          items={[{ label: t("analytics.changeCategory"), children: categoryMenuItems }]}
+          items={contextMenuItems}
           onClose={() => setContextMenu(null)}
         />
       )}
