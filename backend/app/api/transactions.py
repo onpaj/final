@@ -5,13 +5,13 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import LlmClassification, Transaction
+from app.db.models import Account, Category, LlmClassification, Rule, Transaction
 from app.db.session import get_db
 
 router = APIRouter()
@@ -36,6 +36,55 @@ class TransactionOut(BaseModel):
     created_at: datetime
     llm_status: Literal["no_rule_no_llm", "llm_rejected", "llm_error"] | None = None
     llm_confidence: Decimal | None = None
+    model_config = {"from_attributes": True}
+
+
+class AccountRef(BaseModel):
+    id: uuid.UUID
+    name: str
+    iban: str | None
+    model_config = {"from_attributes": True}
+
+
+class CategoryRef(BaseModel):
+    id: uuid.UUID
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class RuleRef(BaseModel):
+    id: uuid.UUID
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class TransferPairOut(BaseModel):
+    id: uuid.UUID
+    amount: Decimal
+    booking_date: date
+    account: AccountRef
+
+
+class TransactionDetailOut(BaseModel):
+    id: uuid.UUID
+    booking_date: date
+    value_date: date | None
+    amount: Decimal
+    currency: str
+    counterparty_name: str | None
+    counterparty_account: str | None
+    description: str | None
+    raw_reference: str | None
+    is_transfer: bool
+    transfer_pair_id: uuid.UUID | None
+    categorization_source: str | None
+    confidence: Decimal | None
+    created_at: datetime
+    import_batch_id: uuid.UUID
+    account: AccountRef
+    category: CategoryRef | None
+    applied_rule: RuleRef | None
+    transfer_pair: TransferPairOut | None
     model_config = {"from_attributes": True}
 
 
