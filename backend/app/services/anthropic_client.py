@@ -78,12 +78,13 @@ class AnthropicClient:
         categories: list[tuple[str, str, str | None]],
     ) -> ClassificationResult:
         category_lines = "\n".join(
-            f"- {group}__{name}" + (f" ({hint})" if hint else "")
+            f"- {group}__{name}" + (f"  # {hint}" if hint else "")
             for group, name, hint in categories
         )
         prompt = (
             f"Classify this bank transaction into one of the categories listed below.\n"
-            f"You MUST return the category in the exact 'CategoryGroup__Category' format as written in the list — do not modify, translate, or combine names.\n\n"
+            f"You MUST return the category in the exact 'CategoryGroup__Category' format as written in the list — do not modify, translate, or combine names.\n"
+            f"Text after '  #' is a hint for context only — do NOT include it in your response.\n\n"
             f"Counterparty: {counterparty or 'unknown'}\n"
             f"Description: {description or 'none'}\n"
             f"Amount: {amount} CZK\n\n"

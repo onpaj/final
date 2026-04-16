@@ -3,6 +3,7 @@ data/
 data/uploads/
 .superpowers/
 backend/.env
+backend/.env.test
 backend/.venv/
 node_modules/
 __pycache__/
@@ -21,3 +22,4 @@ __pycache__/
 tmp/
 logs/
 .playwright-mcp/
+

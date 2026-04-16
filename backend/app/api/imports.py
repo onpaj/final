@@ -41,6 +41,7 @@ class BatchTransactionOut(BaseModel):
     amount: float
     currency: str
     counterparty_name: str | None
+    counterparty_account: str | None
     description: str | None
     category_id: uuid.UUID | None
     categorization_source: Literal["rule", "llm", "manual"] | None
@@ -148,6 +149,7 @@ async def batch_transactions(batch_id: uuid.UUID, db: AsyncSession = Depends(get
             amount=float(tx.amount),
             currency=tx.currency,
             counterparty_name=tx.counterparty_name,
+            counterparty_account=tx.counterparty_account,
             description=tx.description,
             category_id=tx.category_id,
             categorization_source=tx.categorization_source,

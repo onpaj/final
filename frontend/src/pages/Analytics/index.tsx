@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
           onCategoryClick={(categoryId, categoryName) =>
             setLevel({ view: "category", groupName: level.groupName, categoryId, categoryName })
           }
-          onBack={() => setLevel({ view: "summary" })}
+          onBack={() => { setLevel({ view: "summary" }); refetch(); }}
         />
       )}
 
@@ -123,11 +123,14 @@ export default function AnalyticsPage() {
           categoryName={level.categoryName}
           year={year}
           month={month}
-          onBack={() =>
-            level.groupName === "__unclassified__"
-              ? setLevel({ view: "summary" })
-              : setLevel({ view: "group", groupName: level.groupName })
-          }
+          onBack={() => {
+            if (level.groupName === "__unclassified__") {
+              setLevel({ view: "summary" });
+            } else {
+              setLevel({ view: "group", groupName: level.groupName });
+            }
+            refetch();
+          }}
         />
       )}
     </div>
