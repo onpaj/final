@@ -67,6 +67,7 @@ class CategorizationService:
             tx.category_id = match.category_id
             tx.categorization_source = "rule"
             tx.confidence = Decimal("1.0")
+            tx.applied_rule_id = match.rule_id
             rule_obj = await self._db.get(Rule, match.rule_id)
             if rule_obj:
                 rule_obj.hit_count += 1
@@ -159,6 +160,7 @@ class CategorizationService:
             tx.category_id = match.category_id
             tx.categorization_source = "rule"
             tx.confidence = Decimal("1.0")
+            tx.applied_rule_id = match.rule_id
             rule_obj = await self._db.get(Rule, match.rule_id)
             if rule_obj:
                 rule_obj.hit_count += 1
