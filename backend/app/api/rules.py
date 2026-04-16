@@ -14,6 +14,7 @@ class RuleCreate(BaseModel):
     match_type: str
     match_value: dict
     category_id: uuid.UUID
+    account_id: uuid.UUID | None = None
 
 class RuleUpdate(BaseModel):
     name: str | None = None
@@ -22,6 +23,7 @@ class RuleUpdate(BaseModel):
     match_value: dict | None = None
     category_id: uuid.UUID | None = None
     enabled: bool | None = None
+    account_id: uuid.UUID | None = None
 
 class RuleOut(BaseModel):
     id: uuid.UUID
@@ -30,6 +32,7 @@ class RuleOut(BaseModel):
     match_type: str
     match_value: dict
     category_id: uuid.UUID
+    account_id: uuid.UUID | None
     enabled: bool
     hit_count: int
     model_config = {"from_attributes": True}

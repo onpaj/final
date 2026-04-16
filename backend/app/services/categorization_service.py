@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -9,6 +10,8 @@ from app.db.models import Category, CategoryGroup, LlmClassification, Rule, Tran
 from app.services.parsers.base import TransactionRow
 from app.services.rules_engine import RulesEngine
 from app.services.anthropic_client import AnthropicClient, CONFIDENCE_THRESHOLD, AnthropicClassificationError
+
+logger = logging.getLogger(__name__)
 
 
 class CategorizationService:
@@ -29,9 +32,14 @@ class CategorizationService:
                 "category_id": r.category_id,
                 "priority": r.priority,
                 "enabled": r.enabled,
+                "account_id": r.account_id,
             }
             for r in rules
         ]
+
+    @staticmethod
+    def _rules_for_account(rules: list[dict], account_id) -> list[dict]:
+        return [r for r in rules if r.get("account_id") is None or r["account_id"] == account_id]
 
     async def _load_categories(self) -> list[tuple[str, str, str | None]]:
         result = await self._db.execute(
@@ -53,7 +61,7 @@ class CategorizationService:
             raw_reference=tx.raw_reference,
         )
 
-        match = RulesEngine.apply(row, rules)
+        match = RulesEngine.apply(row, self._rules_for_account(rules, tx.account_id))
         if match:
             tx.category_id = match.category_id
             tx.categorization_source = "rule"
@@ -106,6 +114,16 @@ class CategorizationService:
             )
         category = cat_result.scalars().first()
 
+        if category is None:
+            logger.warning(
+                "LLM category lookup failed: tx_id=%s counterparty=%r llm_returned=%r confidence=%s model=%s",
+                tx.id,
+                tx.counterparty_name,
+                raw,
+                result.confidence,
+                result.model,
+            )
+
         accepted = result.confidence >= CONFIDENCE_THRESHOLD and category is not None
         log = LlmClassification(
             transaction_id=tx.id,
@@ -135,7 +153,7 @@ class CategorizationService:
             description=tx.description,
             raw_reference=tx.raw_reference,
         )
-        match = RulesEngine.apply(row, rules)
+        match = RulesEngine.apply(row, self._rules_for_account(rules, tx.account_id))
         if match:
             tx.category_id = match.category_id
             tx.categorization_source = "rule"
