@@ -173,7 +173,7 @@ async def test_batch_transactions_returns_classification_fields(client, mock_db)
     data = resp.json()
     assert len(data) == 1
     assert data[0]["categorization_source"] == "rule"
-    assert data[0]["is_transfer"] is False
+    assert "is_transfer" not in data[0]
 
 
 @pytest.mark.anyio
@@ -190,4 +190,4 @@ async def test_batch_transactions_llm_and_transfer(client, mock_db):
     assert resp.status_code == 200
     data = resp.json()
     assert data[0]["categorization_source"] == "llm"
-    assert data[0]["is_transfer"] is True
+    assert "is_transfer" not in data[0]
