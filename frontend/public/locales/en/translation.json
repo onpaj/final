@@ -203,8 +203,10 @@
     "reasonNoRule": "no rule",
     "reasonLlmError": "LLM error",
     "reasonLlmRejected": "LLM rejected",
-    "runRules": "Run rules",
-    "runLlm": "Classify with LLM",
+    "runClassification": "Run classification",
+    "stepTransfers": "Transfers",
+    "stepRules": "Rules",
+    "stepLlm": "LLM",
     "selectedCount": "{{count}} selected",
     "runError": "Action failed"
   }

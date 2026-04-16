@@ -203,8 +203,10 @@
     "reasonNoRule": "bez pravidla",
     "reasonLlmError": "chyba LLM",
     "reasonLlmRejected": "LLM zamítlo",
-    "runRules": "Spustit pravidla",
-    "runLlm": "Klasifikovat LLM",
+    "runClassification": "Spustit klasifikaci",
+    "stepTransfers": "Přesuny",
+    "stepRules": "Pravidla",
+    "stepLlm": "LLM",
     "selectedCount": "{{count}} vybráno",
     "runError": "Akce selhala"
   }
