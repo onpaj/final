@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { listBatches, type Batch } from "../../api/imports";
 import { listAccounts } from "../../api/accounts";
-import { listCategories, type Category } from "../../api/categories";
+import { listCategoryGroups } from "../../api/categories";
+import type { CategoryGroup } from "../../api/categories";
+import { bulkCategorize } from "../../api/transactions";
+import { buildTransactionContextMenuItems } from "../../utils/transactionContextMenu";
 import client from "../../api/client";
 import ContextMenu from "../../components/ContextMenu";
 import SlideOverPanel from "../../components/SlideOverPanel";
@@ -67,7 +70,19 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
     queryKey: ["batch-transactions", batchId],
     queryFn: async () => (await client.get(`/api/imports/${batchId}/transactions`)).data,
   });
-  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["categories"], queryFn: listCategories });
+  const queryClient = useQueryClient();
+  const { data: categoryGroups = [] } = useQuery<CategoryGroup[]>({
+    queryKey: ["categoryGroups"],
+    queryFn: listCategoryGroups,
+  });
+  const allCategories = categoryGroups.flatMap((g) => g.categories ?? []);
+
+  const categorizeMutation = useMutation({
+    mutationFn: ({ ids, categoryId }: { ids: string[]; categoryId: string | null }) =>
+      bulkCategorize(ids, categoryId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["batch-transactions", batchId] }),
+  });
+
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tx: BatchTx } | null>(null);
 
   if (isLoading) return <p className="text-xs text-gray-400">{t("imports.loadingTx")}</p>;
@@ -104,7 +119,7 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
               <td className="pr-4 py-1"><CategorizationBadge tx={tx} /></td>
               <td className="pr-4 py-1">
                 {(() => {
-                  const cat = categories.find((c) => c.id === tx.category_id);
+                  const cat = allCategories.find((c) => c.id === tx.category_id);
                   if (!cat) return <span className="text-gray-300">—</span>;
                   const bg = cat.color ? `${cat.color}22` : "#e5e7eb";
                   const fg = cat.color ?? "#6b7280";
@@ -126,15 +141,14 @@ function BatchTransactions({ batchId, onCreateRule }: { batchId: string; onCreat
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          items={[{
-            label: t("analytics.createRule"),
-            onClick: () => onCreateRule({
-              name: contextMenu.tx.counterparty_name ?? contextMenu.tx.description ?? "",
-              counterpartyAccount: contextMenu.tx.counterparty_account,
-              counterpartyName: contextMenu.tx.counterparty_name,
-              description: contextMenu.tx.description,
-            }),
-          }]}
+          items={buildTransactionContextMenuItems({
+            tx: contextMenu.tx,
+            selectedIds: [contextMenu.tx.id],
+            categoryGroups,
+            onCategorize: (ids, categoryId) => categorizeMutation.mutate({ ids, categoryId }),
+            onCreateRule,
+            t,
+          })}
           onClose={() => setContextMenu(null)}
         />
       )}
