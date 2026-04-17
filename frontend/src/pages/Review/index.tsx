@@ -317,7 +317,7 @@ export default function ReviewPage() {
                 onCreateRule={setRulePrefill}
               />
               {/* Infinite scroll sentinel */}
-              {mode === "all" && (
+              {mode === "all" && (hasNextPage || isFetchingNextPage) && (
                 <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-400">
                   {isFetchingNextPage ? t("review.loadingMore") : null}
                 </div>

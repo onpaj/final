@@ -20,6 +20,7 @@ export async function listTransactions(params: {
   date_from?: string;
   date_to?: string;
   category_id?: string;
+  categorization_source?: string;
   needs_review?: boolean;
   include_llm_status?: boolean;
   limit?: number;
