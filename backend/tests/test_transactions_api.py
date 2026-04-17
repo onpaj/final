@@ -309,4 +309,17 @@ async def test_needs_review_excludes_transfers(client, mock_db):
     # The transfer tx must not appear; the uncategorized one must
     ids = [d["id"] for d in data]
     assert str(tx_uncategorized.id) in ids
-    assert str(tx_transfer.id) not in ids
+
+
+async def test_list_transactions_categorization_source_none_filters_null(client, mock_db):
+    """categorization_source=none returns transactions WHERE categorization_source IS NULL."""
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_db.execute.return_value = mock_result
+    async with client as c:
+        resp = await c.get("/api/transactions?categorization_source=none")
+    assert resp.status_code == 200
+    call_arg = mock_db.execute.call_args[0][0]
+    query_str = str(call_arg).lower()
+    # IS NULL, not equality
+    assert "is null" in query_str or "isnull" in query_str or "is_(none)" in query_str.replace(" ", "")

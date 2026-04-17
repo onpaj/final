@@ -163,7 +163,10 @@ async def list_transactions(
             (Transaction.categorization_source != "transfer")
         )
     if categorization_source is not None:
-        query = query.where(Transaction.categorization_source == categorization_source)
+        if categorization_source == "none":
+            query = query.where(Transaction.categorization_source.is_(None))
+        else:
+            query = query.where(Transaction.categorization_source == categorization_source)
 
     query = query.order_by(Transaction.booking_date.desc(), Transaction.id.desc())
     query = query.limit(limit).offset(offset)
