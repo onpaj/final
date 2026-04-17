@@ -208,7 +208,21 @@
     "stepRules": "Pravidla",
     "stepLlm": "LLM",
     "selectedCount": "{{count}} vybráno",
-    "runError": "Akce selhala"
+    "runError": "Akce selhala",
+    "modeNeedsReview": "Ke kontrole",
+    "modeAll": "Všechny transakce",
+    "filterAllAccounts": "Všechny účty",
+    "filterFrom": "Od",
+    "filterTo": "Do",
+    "filterSource": "Zdroj",
+    "filterAllSources": "Všechny zdroje",
+    "sourceNone": "Bez zdroje (nekategorizované)",
+    "sourceRule": "Pravidlo",
+    "sourceLlm": "LLM",
+    "sourceTransfer": "Přesun",
+    "sourceManual": "Ručně",
+    "loadingMore": "Načítám další…",
+    "emptyAll": "Žádné transakce neodpovídají zvoleným filtrům."
   },
   "transaction": {
     "showDetails": "Zobrazit detail",

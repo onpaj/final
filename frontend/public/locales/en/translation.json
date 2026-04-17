@@ -208,7 +208,21 @@
     "stepRules": "Rules",
     "stepLlm": "LLM",
     "selectedCount": "{{count}} selected",
-    "runError": "Action failed"
+    "runError": "Action failed",
+    "modeNeedsReview": "Needs Review",
+    "modeAll": "All Transactions",
+    "filterAllAccounts": "All accounts",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterSource": "Source",
+    "filterAllSources": "All sources",
+    "sourceNone": "None (uncategorized)",
+    "sourceRule": "Rule",
+    "sourceLlm": "LLM",
+    "sourceTransfer": "Transfer",
+    "sourceManual": "Manual",
+    "loadingMore": "Loading more…",
+    "emptyAll": "No transactions match the selected filters."
   },
   "transaction": {
     "showDetails": "Show details",
