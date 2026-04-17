@@ -309,6 +309,7 @@ async def test_needs_review_excludes_transfers(client, mock_db):
     # The transfer tx must not appear; the uncategorized one must
     ids = [d["id"] for d in data]
     assert str(tx_uncategorized.id) in ids
+    assert str(tx_transfer.id) not in ids
 
 
 async def test_list_transactions_categorization_source_none_filters_null(client, mock_db):
